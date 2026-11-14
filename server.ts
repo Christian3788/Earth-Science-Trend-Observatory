@@ -615,3 +615,86 @@ interface GeocodeResult {
   kind: 'feature' | 'city' | 'coordinate';
 }
 
+const GEOGRAPHIC_FEATURES: GeocodeResult[] = [
+  { id: 'feat-amazon', name: 'Amazon Rainforest', subtitle: 'Tropical Rainforest · South America', lat: -3.47, lon: -62.22, kind: 'feature' },
+  { id: 'feat-sahara', name: 'Sahara Desert', subtitle: 'Subtropical Desert · North Africa', lat: 23.8, lon: 11.28, kind: 'feature' },
+  { id: 'feat-greenland', name: 'Greenland Ice Sheet', subtitle: 'Polar Ice Sheet · North Atlantic', lat: 72.58, lon: -38.46, kind: 'feature' },
+  { id: 'feat-himalayas', name: 'Himalayas / Mount Everest', subtitle: 'Alpine Range · Asia', lat: 27.99, lon: 86.93, kind: 'feature' },
+  { id: 'feat-tibetan-plateau', name: 'Tibetan Plateau', subtitle: 'Highland Plateau · Central Asia', lat: 32.5, lon: 88.5, kind: 'feature' },
+  { id: 'feat-great-barrier', name: 'Great Barrier Reef', subtitle: 'Marine Coral System · Coral Sea', lat: -18.29, lon: 147.7, kind: 'feature' },
+  { id: 'feat-atacama', name: 'Atacama Desert', subtitle: 'Hyper-Arid Desert · Chile', lat: -23.86, lon: -69.13, kind: 'feature' },
+  { id: 'feat-sahel', name: 'Sahel Belt', subtitle: 'Semi-Arid Savanna · West Africa', lat: 14.5, lon: -4.0, kind: 'feature' },
+  { id: 'feat-congo', name: 'Congo Basin', subtitle: 'Equatorial Rainforest · Central Africa', lat: -0.5, lon: 21.5, kind: 'feature' },
+  { id: 'feat-lake-mead', name: 'Lake Mead / Colorado Basin', subtitle: 'Arid Reservoir · Western USA', lat: 36.01, lon: -114.74, kind: 'feature' },
+  { id: 'feat-arctic-ocean', name: 'Central Arctic Ocean', subtitle: 'Polar Sea Ice Basin · Arctic', lat: 84.0, lon: 0.0, kind: 'feature' },
+  { id: 'feat-antarctic-peninsula', name: 'Antarctic Peninsula', subtitle: 'Polar Ice Shelf · Southern Ocean', lat: -65.25, lon: -64.25, kind: 'feature' },
+  { id: 'feat-gulf-stream', name: 'North Atlantic Gulf Stream', subtitle: 'Ocean Current · North Atlantic', lat: 38.0, lon: -65.0, kind: 'feature' },
+  { id: 'feat-borneo', name: 'Borneo / Maritime Continent', subtitle: 'Equatorial Island · Southeast Asia', lat: 0.5, lon: 114.0, kind: 'feature' },
+  { id: 'feat-siberia', name: 'Siberian Permafrost Tundra', subtitle: 'Boreal Permafrost · Northern Asia', lat: 67.5, lon: 105.0, kind: 'feature' },
+  { id: 'feat-kilimanjaro', name: 'Mount Kilimanjaro', subtitle: 'Equatorial Alpine Peak · Tanzania', lat: -3.07, lon: 37.35, kind: 'feature' },
+  { id: 'feat-mississippi-delta', name: 'Mississippi River Delta', subtitle: 'Tidal Estuary · Gulf Coast USA', lat: 29.15, lon: -89.25, kind: 'feature' },
+  { id: 'feat-patagonia', name: 'Patagonian Ice Field', subtitle: 'Subpolar Glaciers · Southern Andes', lat: -49.5, lon: -73.5, kind: 'feature' },
+  { id: 'feat-coral-triangle', name: 'Coral Triangle', subtitle: 'Tropical Marine Basin · Indo-Pacific', lat: -2.0, lon: 128.0, kind: 'feature' },
+  { id: 'feat-great-lakes', name: 'North American Great Lakes', subtitle: 'Freshwater Basin · North America', lat: 45.8, lon: -84.7, kind: 'feature' },
+  { id: 'feat-mackenzie', name: 'Mackenzie River Basin', subtitle: 'Sub-Arctic Watershed · Northwest Territories, Canada', lat: 65.28, lon: -126.83, kind: 'feature' },
+  { id: 'feat-hudson-bay', name: 'Hudson Bay Sea Ice Margin', subtitle: 'Sub-Arctic Marine Basin · Canada', lat: 58.77, lon: -94.17, kind: 'feature' },
+];
+
+app.get('/api/geocode', async (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim();
+    if (q.length < 2) {
+      res.json({ results: [] });
+      return;
+    }
+
+    // Check direct "lat, lon" coordinate input
+    const coordMatch = q.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+    if (coordMatch) {
+      const lat = Number(coordMatch[1]);
+      const lon = Number(coordMatch[2]);
+      if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+        res.json({
+          results: [
+            {
+              id: `coord-${lat}-${lon}`,
+              name: `${Math.abs(lat).toFixed(2)}°${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(2)}°${lon >= 0 ? 'E' : 'W'}`,
+              subtitle: 'Direct Geographic Coordinate',
+              lat: Number(lat.toFixed(2)),
+              lon: Number(lon.toFixed(2)),
+              kind: 'coordinate',
+            },
+          ],
+        });
+        return;
+      }
+    }
+
+    const cacheKey = `geocode:${q.toLowerCase()}`;
+    const cached = responseCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      res.json(cached.payload);
+      return;
+    }
+
+    const qLower = q.toLowerCase();
+    const featureMatches = GEOGRAPHIC_FEATURES.filter(
+      (f) => f.name.toLowerCase().includes(qLower) || f.subtitle.toLowerCase().includes(qLower),
+    ).slice(0, 4);
+
+    let cityMatches: GeocodeResult[] = [];
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3500);
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
+        q,
+      )}&count=6&language=en&format=json`;
+      const upstream = await fetch(url, { signal: controller.signal });
+      clearTimeout(timer);
+
+      if (upstream.ok) {
+        const json = (await upstream.json()) as {
+          results?: Array<{
+            id: number;
+            name: string;
+            latitude: number;
