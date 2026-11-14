@@ -654,3 +654,134 @@ export const DEMONSTRATION_CASES: DemonstrationCase[] = [
         endYear: 2024,
         resolution: 'monthly',
         deseasonalize: true,
+        highlightMetric: 'mannkendall',
+      },
+    ],
+  },
+  {
+    id: 'seawifs-coastal-plume',
+    title: 'Coastal Chlorophyll in River Plumes',
+    subtitle: 'Mississippi River Estuary vs. North Atlantic Gyre (SeaWiFS)',
+    driverSummary:
+      'Inspired by SeaWiFS river-influenced coastal time-series studies, river nutrient discharge drives rising coastal chlorophyll-a trends that contrast with oligotrophic open ocean gyres.',
+    steps: [
+      {
+        title: '1. Inspect River-Plume Chlorophyll Cycles',
+        narrative:
+          'At the Mississippi River Plume, spring freshwater runoff triggers strong seasonal phytoplankton blooms. Let us compare raw vs. deseasonalized trends.',
+        variableId: 'SEAWIFS_CHL',
+        primaryRegionId: 'mississippi-delta',
+        compareRegionId: null,
+        startYear: 1998,
+        endYear: 2024,
+        resolution: 'monthly',
+        deseasonalize: false,
+      },
+      {
+        title: '2. Contrast River Estuary vs. Open Ocean',
+        narrative:
+          'Deseasonalizing and overlaying the North Atlantic Subpolar Gyre reveals divergent trends: coastal eutrophication rises while open-ocean chlorophyll drifts downward.',
+        variableId: 'SEAWIFS_CHL',
+        primaryRegionId: 'mississippi-delta',
+        compareRegionId: 'north-atlantic',
+        startYear: 1998,
+        endYear: 2024,
+        resolution: 'monthly',
+        deseasonalize: true,
+        highlightMetric: 'slope',
+      },
+    ],
+  },
+  {
+    id: 'swot-rcm-watersheds',
+    title: 'SWOT Water Elevation & CSA SAR Monitoring',
+    subtitle: 'Colorado Basin Drawdown vs. Canada’s Mackenzie Watershed',
+    driverSummary:
+      'NASA/CNES/CSA SWOT tracks surface water height across lakes and rivers, while CSA’s RADARSAT Constellation Mission (RCM) uses cloud-penetrating radar over northern basins.',
+    steps: [
+      {
+        title: '1. Compare Reservoir & Arctic River Elevation',
+        narrative:
+          'Using SWOT Surface Water Elevation Anomaly, compare Colorado Basin drawdown (Region A) against Canada’s Mackenzie River Basin (Region B).',
+        variableId: 'SWOT_WSE',
+        primaryRegionId: 'lake-mead',
+        compareRegionId: 'mackenzie-basin',
+        startYear: 2002,
+        endYear: 2024,
+        resolution: 'monthly',
+        deseasonalize: true,
+        highlightMetric: 'ttest',
+      },
+      {
+        title: '2. Inspect All-Weather CSA RCM Radar Over Hudson Bay',
+        narrative:
+          'Switching to CSA RCM C-Band SAR Backscatter over Hudson Bay reveals a statistically significant decline linked to earlier seasonal sea-ice breakup.',
+        variableId: 'RCM_SAR_WETLAND',
+        primaryRegionId: 'hudson-bay',
+        compareRegionId: null,
+        startYear: 2005,
+        endYear: 2024,
+        resolution: 'monthly',
+        deseasonalize: true,
+        highlightMetric: 'mannkendall',
+      },
+    ],
+  },
+];
+
+export interface DetectiveAnswers {
+  sphere: EarthSphere | 'Any';
+  biome: PresetRegion['biome'] | 'any';
+  goal: 'warming' | 'water' | 'air-energy' | 'vegetation';
+}
+
+export function recommendFromDetective(answers: DetectiveAnswers): {
+  variables: EarthVariable[];
+  regions: PresetRegion[];
+  rationale: string;
+} {
+  let vars = EARTH_VARIABLES.filter((v) => {
+    if (answers.sphere !== 'Any' && v.sphere !== answers.sphere) return false;
+    if (answers.goal === 'warming') {
+      return ['T2M', 'TS', 'SRF_ALB', 'AIRS_H2O_MID'].includes(v.id);
+    }
+    if (answers.goal === 'water') {
+      return ['SWOT_WSE', 'PRECTOTCORR', 'GWETPROF', 'GLDAS_RUNOFF', 'RH2M'].includes(v.id);
+    }
+    if (answers.goal === 'air-energy') {
+      return ['OMI_NO2', 'OMI_O3', 'ALLSKY_SFC_SW_DWN', 'CLOUD_AMT', 'WS10M'].includes(v.id);
+    }
+    if (answers.goal === 'vegetation') {
+      return ['MODIS_NDVI', 'SEAWIFS_CHL', 'RCM_SAR_WETLAND', 'GWETPROF'].includes(v.id);
+    }
+    return true;
+  });
+
+  if (vars.length === 0) {
+    vars = EARTH_VARIABLES.filter((v) =>
+      answers.sphere === 'Any' ? true : v.sphere === answers.sphere,
+    );
+  }
+
+  let regions = PRESET_REGIONS.filter((r) =>
+    answers.biome === 'any' ? true : r.biome === answers.biome,
+  );
+  if (regions.length === 0) {
+    regions = PRESET_REGIONS.slice(0, 3);
+  }
+
+  const goalText: Record<DetectiveAnswers['goal'], string> = {
+    warming: 'surface temperature, albedo feedback, and atmospheric moisture warming',
+    water: 'precipitation shifts, root-zone soil wetness, and watershed runoff',
+    'air-energy': 'air pollutants, ozone recovery, clouds, and surface solar radiation',
+    vegetation: 'canopy greenness (NDVI) alongside water and thermal stress drivers',
+  };
+
+  return {
+    variables: vars,
+    regions,
+    rationale: `Matched ${vars.length} Earth science variable${vars.length === 1 ? '' : 's'} suited for investigating ${goalText[answers.goal]} across ${
+      answers.biome === 'any' ? 'global environments' : `${answers.biome} regions`
+    }.`,
+  };
+}
