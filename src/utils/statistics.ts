@@ -152,3 +152,80 @@ function criticalT025(df: number): number {
 // Standard normal two-tailed p-value via Abramowitz & Stegun erfc approximation
 function normalTwoTailedPValue(z: number): number {
   const x = Math.abs(z) / Math.SQRT2;
+  const t = 1 / (1 + 0.3275911 * x);
+  const poly =
+    (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t;
+  const erfcApprox = poly * Math.exp(-x * x);
+  return Math.min(1, Math.max(0, erfcApprox));
+}
+
+export function aggregateAnnual(points: TimeSeriesPoint[]): TimeSeriesPoint[] {
+  const byYear = new Map<number, number[]>();
+  for (const pt of points) {
+    const arr = byYear.get(pt.year);
+    if (arr) arr.push(pt.value);
+    else byYear.set(pt.year, [pt.value]);
+  }
+  const annual: TimeSeriesPoint[] = [];
+  for (const [year, vals] of Array.from(byYear.entries()).sort((a, b) => a[0] - b[0])) {
+    if (vals.length < 6) continue;
+    const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+    annual.push({
+      date: `${year}`,
+      year,
+      month: 6,
+      decimalYear: year + 0.5,
+      value: Number(mean.toFixed(4)),
+    });
+  }
+  return annual;
+}
+
+export function deseasonalizeMonthly(points: TimeSeriesPoint[]): TimeSeriesPoint[] {
+  const monthSums = new Array<number>(13).fill(0);
+  const monthCounts = new Array<number>(13).fill(0);
+
+  for (const pt of points) {
+    monthSums[pt.month] += pt.value;
+    monthCounts[pt.month] += 1;
+  }
+
+  const monthMeans = monthSums.map((sum, m) => (monthCounts[m] > 0 ? sum / monthCounts[m] : 0));
+
+  return points.map((pt) => ({
+    ...pt,
+    value: Number((pt.value - monthMeans[pt.month]).toFixed(4)),
+  }));
+}
+
+export function analyzeTimeSeries(
+  rawPoints: TimeSeriesPoint[],
+  options: {
+    resolution: 'monthly' | 'annual' | 'daily';
+    deseasonalize: boolean;
+    variableName: string;
+    unit: string;
+    regionName: string;
+    alpha?: number;
+  },
+): TrendAnalysisSummary | null {
+  const alpha = options.alpha ?? 0.05;
+  if (rawPoints.length < 4) return null;
+
+  let working = rawPoints;
+  if (options.resolution === 'annual') {
+    working = aggregateAnnual(rawPoints);
+  } else if (options.deseasonalize) {
+    working = deseasonalizeMonthly(rawPoints);
+  }
+
+  const n = working.length;
+  if (n < 4) return null;
+
+  const xs = working.map((p) => p.decimalYear);
+  const ys = working.map((p) => p.value);
+
+  const meanX = xs.reduce((a, b) => a + b, 0) / n;
+  const meanY = ys.reduce((a, b) => a + b, 0) / n;
+
+  let sxx = 0;
