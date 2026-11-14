@@ -502,3 +502,104 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
       if (p.compareMode) {
         orientMarker(compareMarker, p.compareLat, p.compareLon);
 
+        // Build elevated great-circle arc between Region A and Region B
+        const startDir = latLonToVec3(p.primaryLat, p.primaryLon, 1, _vA.clone()).normalize();
+        const endDir = latLonToVec3(p.compareLat, p.compareLon, 1, _vB.clone()).normalize();
+        const angle = startDir.angleTo(endDir);
+        const arcPoints: THREE.Vector3[] = [];
+        const segments = 48;
+        for (let i = 0; i <= segments; i++) {
+          const t = i / segments;
+          // Spherical linear interpolation
+          const pt = new THREE.Vector3().copy(startDir).lerp(endDir, t).normalize();
+          const lift = Math.sin(t * Math.PI) * Math.min(0.65, 0.14 + angle * 0.22);
+          pt.multiplyScalar(EARTH_RADIUS + 0.03 + lift);
+          arcPoints.push(pt);
+        }
+        const curve = new THREE.CatmullRomCurve3(arcPoints);
+        const tubeGeo = new THREE.TubeGeometry(curve, 48, 0.0085, 8, false);
+        arcMesh = new THREE.Mesh(tubeGeo, arcMat);
+        globeGroup.add(arcMesh);
+      }
+
+      // Highlight active preset pins
+      for (const pin of presetPinMeshes) {
+        const preset = pin.userData.preset as PresetRegion;
+        const mat = pin.material as THREE.MeshStandardMaterial;
+        if (preset.id === p.activePresetId) {
+          mat.color.setHex(0x3b82f6);
+          mat.emissive.setHex(0x1d4ed8);
+        } else if (p.compareMode && preset.id === p.comparePresetId) {
+          mat.color.setHex(0xf59e0b);
+          mat.emissive.setHex(0xb45309);
+        } else {
+          mat.color.setHex(0xe2e8f0);
+          mat.emissive.setHex(0x334155);
+        }
+      }
+    };
+
+    updateMarkers();
+
+    // Smooth camera focus animation state (cancels when user drags)
+    let cameraFocusActive = false;
+    const focusOnLatLon = (lat: number, lon: number) => {
+      const dist = camera.position.length();
+      latLonToVec3(lat, lon, Math.max(3.6, Math.min(6.2, dist)), _camTargetPos);
+      cameraFocusActive = true;
+    };
+
+    const resetView = () => {
+      const p = latestPropsRef.current;
+      latLonToVec3(p.primaryLat, p.primaryLon, 5.15, _camTargetPos);
+      cameraFocusActive = true;
+    };
+
+    controls.addEventListener('start', () => {
+      cameraFocusActive = false;
+    });
+
+    sceneSyncRef.current = {
+      updateMarkers,
+      focusOnLatLon,
+      resetView,
+    };
+
+    // Raycasting for hover readout and click-to-select coordinate / preset
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let downX = 0;
+    let downY = 0;
+    let lastHoverTime = 0;
+
+    const updatePointer = (e: PointerEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      downX = e.clientX;
+      downY = e.clientY;
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      const now = performance.now();
+      if (now - lastHoverTime < 40) return;
+      lastHoverTime = now;
+
+      updatePointer(e);
+      raycaster.setFromCamera(pointer, camera);
+
+      const pinHits = raycaster.intersectObjects(presetPinMeshes, false);
+      if (pinHits.length > 0) {
+        const preset = pinHits[0].object.userData.preset as PresetRegion;
+        setHoveredPreset(preset);
+        setHoverCoords({ lat: preset.lat, lon: preset.lon });
+        renderer.domElement.style.cursor = 'pointer';
+        return;
+      }
+
+      setHoveredPreset(null);
+      const earthHits = raycaster.intersectObject(earthMesh, false);
+      if (earthHits.length > 0 && earthHits[0].uv) {
