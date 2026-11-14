@@ -405,3 +405,57 @@ interface AnchorPoint {
   anomaly: number;
 }
 
+const GLOBAL_ANCHORS: { lat: number; lon: number }[] = [
+  { lat: 71.3, lon: -156.8 },  // Arctic Alaska
+  { lat: 68.5, lon: 88.2 },    // Arctic Siberia
+  { lat: 36.0, lon: -114.7 },  // US Southwest
+  { lat: 34.0, lon: -118.2 },  // Los Angeles
+  { lat: 40.7, lon: -74.0 },   // US East Coast
+  { lat: -3.5, lon: -62.2 },   // Central Amazon
+  { lat: -12.0, lon: -77.0 },  // Coastal Peru
+  { lat: 53.0, lon: -35.0 },   // North Atlantic Gyre
+  { lat: 48.8, lon: 2.3 },     // Western Europe
+  { lat: 14.5, lon: -4.0 },    // Sahel Mali
+  { lat: 25.0, lon: 15.0 },    // Sahara
+  { lat: 22.0, lon: 78.0 },    // Central India
+  { lat: 0.5, lon: 114.0 },    // Borneo / Maritime Continent
+  { lat: 35.0, lon: 115.0 },   // East China
+  { lat: -25.0, lon: 135.0 },  // Central Australia
+  { lat: -62.0, lon: -60.0 },  // Southern Ocean / Antarctic Peninsula
+];
+
+function computePeriodAnomaly(points: TimeSeriesPoint[], startYear: number, endYear: number): number | null {
+  if (points.length < 24) return null;
+  const span = endYear - startYear;
+  const recentCutoff = Math.max(startYear + Math.floor(span * 0.65), endYear - 4);
+  const baseCutoff = Math.min(endYear - 1, startYear + Math.max(4, Math.floor(span * 0.35)));
+
+  let baseSum = 0;
+  let baseN = 0;
+  let recentSum = 0;
+  let recentN = 0;
+
+  for (const pt of points) {
+    if (pt.year <= baseCutoff) {
+      baseSum += pt.value;
+      baseN += 1;
+    }
+    if (pt.year >= recentCutoff) {
+      recentSum += pt.value;
+      recentN += 1;
+    }
+  }
+  if (baseN === 0 || recentN === 0) return null;
+  return recentSum / recentN - baseSum / baseN;
+}
+
+function greatCircleRad(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const toRad = Math.PI / 180;
+  const p1 = lat1 * toRad;
+  const p2 = lat2 * toRad;
+  const dp = (lat2 - lat1) * toRad;
+  const dl = (lon2 - lon1) * toRad;
+  const a = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+  return 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
