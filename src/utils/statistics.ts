@@ -306,3 +306,80 @@ export function analyzeTimeSeries(
       const xj = xs[mkIndices[j]];
       const yj = ys[mkIndices[j]];
       const diff = yj - yi;
+      if (diff > 0) S += 1;
+      else if (diff < 0) S -= 1;
+      const dt = xj - xi;
+      if (dt > 0) pairSlopes.push(diff / dt);
+    }
+  }
+
+  // Tie correction for Mann-Kendall variance
+  const counts = new Map<number, number>();
+  for (const idx of mkIndices) {
+    const v = ys[idx];
+    counts.set(v, (counts.get(v) || 0) + 1);
+  }
+  let tieTerm = 0;
+  for (const t of counts.values()) {
+    if (t > 1) {
+      tieTerm += t * (t - 1) * (2 * t + 5);
+    }
+  }
+
+  const varS = Math.max(1e-9, (m * (m - 1) * (2 * m + 5) - tieTerm) / 18);
+  const zMK = S > 0 ? (S - 1) / Math.sqrt(varS) : S < 0 ? (S + 1) / Math.sqrt(varS) : 0;
+  const pValMK = normalTwoTailedPValue(zMK);
+  const tau = S / (0.5 * m * (m - 1));
+
+  pairSlopes.sort((a, b) => a - b);
+  const mid = Math.floor(pairSlopes.length / 2);
+  const sensSlope =
+    pairSlopes.length === 0
+      ? 0
+      : pairSlopes.length % 2 === 1
+      ? pairSlopes[mid]
+      : 0.5 * (pairSlopes[mid - 1] + pairSlopes[mid]);
+
+  const mannKendall: MannKendallResult = {
+    n: m,
+    sStatistic: S,
+    varianceS: varS,
+    zScore: zMK,
+    tau,
+    pValue: pValMK,
+    sensSlopePerYear: sensSlope,
+    sensSlopePerDecade: sensSlope * 10,
+  };
+
+  // Build chart points with 95% confidence band around the linear regression line
+  const processedPoints: ProcessedPoint[] = working.map((pt) => {
+    const trendVal = intercept + slope * pt.decimalYear;
+    const dx = pt.decimalYear - meanX;
+    const seLine = sErr * Math.sqrt(1 / n + (sxx > 0 ? (dx * dx) / sxx : 0));
+    const margin = tCrit * seLine;
+    return {
+      ...pt,
+      plotValue: pt.value,
+      trendValue: trendVal,
+      ciLower: trendVal - margin,
+      ciUpper: trendVal + margin,
+    };
+  });
+
+  const olsSig = pValOLS < alpha;
+  const mkSig = pValMK < alpha;
+  const isSignificant = olsSig || mkSig;
+  const bothSig = olsSig && mkSig;
+
+  const direction: 'up' | 'down' | 'neutral' =
+    Math.abs(slope) < 1e-6 && Math.abs(sensSlope) < 1e-6
+      ? 'neutral'
+      : slope > 0
+      ? 'up'
+      : 'down';
+
+  let verdictTitle = 'No Statistically Significant Trend';
+  if (bothSig && direction === 'up') {
+    verdictTitle = 'Statistically Significant Increasing Trend';
+  } else if (bothSig && direction === 'down') {
+    verdictTitle = 'Statistically Significant Decreasing Trend';
