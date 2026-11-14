@@ -229,3 +229,80 @@ export function analyzeTimeSeries(
   const meanY = ys.reduce((a, b) => a + b, 0) / n;
 
   let sxx = 0;
+  let syy = 0;
+  let sxy = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = xs[i] - meanX;
+    const dy = ys[i] - meanY;
+    sxx += dx * dx;
+    syy += dy * dy;
+    sxy += dx * dy;
+  }
+
+  const slope = sxx > 0 ? sxy / sxx : 0;
+  const intercept = meanY - slope * meanX;
+
+  let sse = 0;
+  for (let i = 0; i < n; i++) {
+    const pred = intercept + slope * xs[i];
+    const err = ys[i] - pred;
+    sse += err * err;
+  }
+
+  const df = n - 2;
+  const mse = df > 0 ? sse / df : 0;
+  const sErr = Math.sqrt(mse);
+  const seSlope = sxx > 0 ? sErr / Math.sqrt(sxx) : 0;
+  const tStat = seSlope > 0 ? slope / seSlope : 0;
+  const pValOLS = studentTTwoTailedPValue(tStat, df);
+  const tCrit = criticalT025(df);
+
+  const ciLowerSlope = slope - tCrit * seSlope;
+  const ciUpperSlope = slope + tCrit * seSlope;
+  const rSquared = syy > 0 ? Math.max(0, Math.min(1, 1 - sse / syy)) : 0;
+
+  const spanYears = Math.max(0.01, xs[n - 1] - xs[0]);
+  const totalChange = slope * spanYears;
+
+  const ols: OLSResult = {
+    n,
+    slopePerYear: slope,
+    slopePerDecade: slope * 10,
+    intercept,
+    rSquared,
+    standardErrorSlope: seSlope,
+    tStatistic: tStat,
+    df,
+    pValue: pValOLS,
+    ci95LowerPerYear: ciLowerSlope,
+    ci95UpperPerYear: ciUpperSlope,
+    ci95LowerPerDecade: ciLowerSlope * 10,
+    ci95UpperPerDecade: ciUpperSlope * 10,
+    totalChange,
+    spanYears,
+    meanValue: meanY,
+  };
+
+  // Mann-Kendall Test + Sen's Slope
+  // For daily series > 600 points, downsample evenly to max 450 points for O(n^2) responsiveness
+  const mkIndices: number[] = [];
+  if (n > 500) {
+    const step = n / 450;
+    for (let k = 0; k < 450; k++) {
+      mkIndices.push(Math.min(n - 1, Math.floor(k * step)));
+    }
+  } else {
+    for (let i = 0; i < n; i++) mkIndices.push(i);
+  }
+
+  const m = mkIndices.length;
+  let S = 0;
+  const pairSlopes: number[] = [];
+
+  for (let i = 0; i < m - 1; i++) {
+    const xi = xs[mkIndices[i]];
+    const yi = ys[mkIndices[i]];
+    for (let j = i + 1; j < m; j++) {
+      const xj = xs[mkIndices[j]];
+      const yj = ys[mkIndices[j]];
+      const diff = yj - yi;
