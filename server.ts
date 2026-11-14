@@ -548,3 +548,70 @@ app.get('/api/spatial-heatmap', async (req, res) => {
           let wSum = 0;
           let vSum = 0;
           let maxInfluence = 0;
+          for (const a of liveAnchors) {
+            const dist = greatCircleRad(lat, lon, a.lat, a.lon);
+            const w = Math.exp(-(dist * dist) / (2 * 0.42 * 0.42));
+            wSum += w;
+            vSum += w * a.anomaly;
+            if (w > maxInfluence) maxInfluence = w;
+          }
+          if (wSum > 1e-6) {
+            const idwVal = vSum / wSum;
+            const alpha = Math.min(0.85, maxInfluence);
+            cellAnomaly = alpha * idwVal + (1 - alpha) * modelAnom;
+          }
+        }
+
+        rowVals.push(cellAnomaly);
+        weightedSum += cellAnomaly * cosLat;
+        weightTotal += cosLat;
+      }
+      rawGrid.push(rowVals);
+    }
+
+    const globalModelMean = weightTotal > 0 ? weightedSum / weightTotal : 0;
+
+    let minDeviation = Infinity;
+    let maxDeviation = -Infinity;
+    const deviations: number[][] = rawGrid.map((row) =>
+      row.map((val) => {
+        const dev = Number((val - globalModelMean).toFixed(4));
+        if (dev < minDeviation) minDeviation = dev;
+        if (dev > maxDeviation) maxDeviation = dev;
+        return dev;
+      }),
+    );
+
+    const payload = {
+      variable,
+      startYear,
+      endYear,
+      rows,
+      cols,
+      globalModelMean: Number(globalModelMean.toFixed(4)),
+      minDeviation: Number(minDeviation.toFixed(4)),
+      maxDeviation: Number(maxDeviation.toFixed(4)),
+      sourceType: useLiveBlend ? 'nasa-power-blended' : 'global-model-grid',
+      sourceLabel: useLiveBlend
+        ? `NASA POWER Live Anchor Network (${liveAnchors.length} stations) + Global Reanalysis Grid`
+        : 'Global Mission Reference Model Grid',
+      deviations,
+    };
+
+    responseCache.set(cacheKey, { timestamp: Date.now(), payload });
+    res.json(payload);
+  } catch (error) {
+    console.error('Error in /api/spatial-heatmap:', error);
+    res.status(500).json({ error: 'Unable to compute spatial anomaly heatmap.' });
+  }
+});
+
+interface GeocodeResult {
+  id: string;
+  name: string;
+  subtitle: string;
+  lat: number;
+  lon: number;
+  kind: 'feature' | 'city' | 'coordinate';
+}
+
