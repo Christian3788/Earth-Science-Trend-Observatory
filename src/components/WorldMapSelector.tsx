@@ -145,3 +145,150 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
   compareLat,
   compareLon,
   compareLabel,
+  activeSelectionTarget,
+  onSelectTargetChange,
+  onSelectCoordinate,
+  presets,
+  activePresetId,
+  comparePresetId,
+  heatmapData,
+  heatmapLoading,
+  heatmapEnabled,
+  onToggleHeatmap,
+  heatmapOpacity,
+  onChangeHeatmapOpacity,
+  variableName,
+  unit,
+  decimals,
+}) => {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [hoverCoords, setHoverCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [hoveredPreset, setHoveredPreset] = useState<PresetRegion | null>(null);
+
+  const countryPaths = useMemo(() => {
+    const topo = countries110m as unknown as Topology<{
+      countries: GeometryCollection;
+    }>;
+    const geo = feature(topo, topo.objects.countries);
+    const paths: string[] = [];
+
+    for (const feat of geo.features) {
+      const geom = feat.geometry;
+      if (!geom) continue;
+      if (geom.type === 'Polygon') {
+        for (const ring of geom.coordinates) {
+          paths.push(ringToSvgPath(ring));
+        }
+      } else if (geom.type === 'MultiPolygon') {
+        for (const poly of geom.coordinates) {
+          for (const ring of poly) {
+            paths.push(ringToSvgPath(ring));
+          }
+        }
+      }
+    }
+    return paths;
+  }, []);
+
+  const maxAbsDeviation = useMemo(() => {
+    if (!heatmapData) return 1;
+    return Math.max(Math.abs(heatmapData.minDeviation), Math.abs(heatmapData.maxDeviation), 1e-4);
+  }, [heatmapData]);
+
+  // Paint bilinearly interpolated heatmap onto canvas whenever data updates
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !heatmapData || !heatmapEnabled) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = ctx.createImageData(HEATMAP_W, HEATMAP_H);
+    const buf = img.data;
+
+    for (let py = 0; py < HEATMAP_H; py++) {
+      const lat = 90 - ((py + 0.5) / HEATMAP_H) * 180;
+      for (let px = 0; px < HEATMAP_W; px++) {
+        const lon = ((px + 0.5) / HEATMAP_W) * 360 - 180;
+        const dev = sampleDeviationAt(heatmapData, lat, lon);
+        const norm = dev / maxAbsDeviation;
+        const [r, g, b] = deviationToRGB(norm);
+        const idx = (py * HEATMAP_W + px) * 4;
+        buf[idx] = r;
+        buf[idx + 1] = g;
+        buf[idx + 2] = b;
+        // Fade opacity near neutral zero deviation slightly less so extreme anomalies pop clearly
+        buf[idx + 3] = 255;
+      }
+    }
+
+    ctx.putImageData(img, 0, 0);
+  }, [heatmapData, heatmapEnabled, maxAbsDeviation]);
+
+  const getCoordsFromEvent = (e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = svgRef.current;
+    if (!svg) return null;
+    const rect = svg.getBoundingClientRect();
+    const relX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const relY = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+    const lon = Number((relX * 360 - 180).toFixed(2));
+    const lat = Number((90 - relY * 180).toFixed(2));
+    return { lat, lon };
+  };
+
+  const handleMapClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    const coords = getCoordsFromEvent(e);
+    if (!coords) return;
+    onSelectCoordinate(coords.lat, coords.lon);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const coords = getCoordsFromEvent(e);
+    if (coords) setHoverCoords(coords);
+  };
+
+  const formatCoord = (lat: number, lon: number) => {
+    const ns = lat >= 0 ? 'N' : 'S';
+    const ew = lon >= 0 ? 'E' : 'W';
+    return `${Math.abs(lat).toFixed(2)}°${ns}, ${Math.abs(lon).toFixed(2)}°${ew}`;
+  };
+
+  const hoveredDeviation = useMemo(() => {
+    if (!heatmapEnabled || !heatmapData) return null;
+    const target = hoverCoords || { lat: primaryLat, lon: primaryLon };
+    return sampleDeviationAt(heatmapData, target.lat, target.lon);
+  }, [heatmapEnabled, heatmapData, hoverCoords, primaryLat, primaryLon]);
+
+  const lonGrid = [-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150];
+  const latGrid = [-60, -30, 0, 30, 60];
+
+  const sign = (v: number) => (v >= 0 ? '+' : '');
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      {/* Top Map Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 bg-slate-50/70">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs font-semibold text-slate-800 tracking-tight">
+            2D Global Spatial Map & Anomaly Heatmap
+          </span>
+
+          <button
+            type="button"
+            onClick={onToggleHeatmap}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              heatmapEnabled
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>{heatmapEnabled ? 'Anomaly Heatmap: On' : 'Anomaly Heatmap: Off'}</span>
+          </button>
+
+          {heatmapEnabled && (
+            <div className="flex items-center gap-2 text-[11px] text-slate-600">
+              <span>Opacity</span>
+              <input
+                type="range"
+                min={0.25}
