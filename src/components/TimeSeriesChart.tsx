@@ -260,3 +260,134 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
           )}
 
           {/* Vertical X grid ticks */}
+          {xTicks.map((yr) => {
+            const x = toSvgX(yr);
+            return (
+              <g key={yr}>
+                <line x1={x} y1={PAD.top} x2={x} y2={H - PAD.bottom} stroke="#F1F5F9" strokeWidth={1} />
+                <text
+                  x={x}
+                  y={H - PAD.bottom + 18}
+                  textAnchor="middle"
+                  fontSize="10.5"
+                  fill="#64748B"
+                  className="font-mono tabular-nums"
+                >
+                  {yr}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Axes */}
+          <line x1={PAD.left} y1={PAD.top} x2={PAD.left} y2={H - PAD.bottom} stroke="#CBD5E1" strokeWidth={1} />
+          <line
+            x1={PAD.left}
+            y1={H - PAD.bottom}
+            x2={W - PAD.right}
+            y2={H - PAD.bottom}
+            stroke="#CBD5E1"
+            strokeWidth={1}
+          />
+
+          {/* 95% Confidence Interval band */}
+          {primaryCiBandPath && <path d={primaryCiBandPath} fill="rgba(37, 99, 235, 0.11)" />}
+
+          {/* Primary Data Line */}
+          <path
+            d={primarySeriesPath}
+            fill="none"
+            stroke="#2563EB"
+            strokeWidth={compareSummary ? 1.5 : 1.75}
+            strokeOpacity={0.85}
+          />
+
+          {/* Primary OLS Trend Line */}
+          <path
+            d={primaryTrendPath}
+            fill="none"
+            stroke="#1E3A8A"
+            strokeWidth={2.2}
+            strokeDasharray="6 4"
+          />
+
+          {/* Comparison Data + Trend Line */}
+          {compareSummary && (
+            <>
+              <path
+                d={compareSeriesPath}
+                fill="none"
+                stroke="#D97706"
+                strokeWidth={1.5}
+                strokeOpacity={0.85}
+              />
+              <path
+                d={compareTrendPath}
+                fill="none"
+                stroke="#92400E"
+                strokeWidth={2.2}
+                strokeDasharray="6 4"
+              />
+            </>
+          )}
+
+          {/* Crosshair Hover */}
+          {hoveredPrimary && (
+            <g pointerEvents="none">
+              <line
+                x1={toSvgX(hoveredPrimary.decimalYear)}
+                y1={PAD.top}
+                x2={toSvgX(hoveredPrimary.decimalYear)}
+                y2={H - PAD.bottom}
+                stroke="#475569"
+                strokeWidth={1}
+                strokeDasharray="2 2"
+              />
+              <circle
+                cx={toSvgX(hoveredPrimary.decimalYear)}
+                cy={toSvgY(hoveredPrimary.plotValue)}
+                r={4.2}
+                fill="#2563EB"
+                stroke="#FFFFFF"
+                strokeWidth={1.5}
+              />
+              {hoveredCompare && (
+                <circle
+                  cx={toSvgX(hoveredCompare.decimalYear)}
+                  cy={toSvgY(hoveredCompare.plotValue)}
+                  r={4.2}
+                  fill="#D97706"
+                  stroke="#FFFFFF"
+                  strokeWidth={1.5}
+                />
+              )}
+            </g>
+          )}
+        </svg>
+
+        {/* Compact Monospace Crosshair HUD */}
+        {hoveredPrimary && (
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded text-xs font-mono tabular-nums text-slate-700">
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="font-semibold text-slate-900">{hoveredPrimary.date}</span>
+              <span className="text-blue-700">
+                {primaryLabel}: {hoveredPrimary.plotValue.toFixed(decimals)} {unit}
+              </span>
+              <span className="text-slate-500">
+                Trend: {hoveredPrimary.trendValue.toFixed(decimals)} {unit}
+              </span>
+              {hoveredCompare && compareLabel && (
+                <span className="text-amber-700">
+                  {compareLabel}: {hoveredCompare.plotValue.toFixed(decimals)} {unit}
+                </span>
+              )}
+            </div>
+            <span className="text-slate-400">
+              95% CI [{hoveredPrimary.ciLower.toFixed(decimals)}, {hoveredPrimary.ciUpper.toFixed(decimals)}]
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
