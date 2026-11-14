@@ -1,0 +1,8 @@
+# <type>: <short summary>
+#
+# Types: feat, fix, chore, docs, refactor, test, style, perf
+#
+# <body: explain what and why, wrapped at ~72 chars>
+#
+# Co-authored-by: Full Name <email@example.com>
+# Co-authored-by: Full Name <email@example.com>
