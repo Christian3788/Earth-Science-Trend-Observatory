@@ -212,3 +212,109 @@ export const TimeSeries3DSurface: React.FC<TimeSeries3DSurfaceProps> = ({
     let renderDirty = false;
     let disposed = false;
 
+    function afterDraw(cb: () => void) {
+      const gl = renderer.getContext() as WebGL2RenderingContext;
+      const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+      gl.flush();
+      const poll = () => {
+        if (disposed) {
+          if (sync) gl.deleteSync(sync);
+          return;
+        }
+        const state = sync && gl.getSyncParameter(sync, gl.SYNC_STATUS);
+        if (state === gl.UNSIGNALED) {
+          frameId = window.setTimeout(poll, 5);
+        } else {
+          if (sync) gl.deleteSync(sync);
+          frameId = window.setTimeout(cb, 80);
+        }
+      };
+      frameId = window.setTimeout(poll, 5);
+    }
+
+    function requestRender() {
+      if (disposed) return;
+      if (renderBusy) {
+        renderDirty = true;
+        return;
+      }
+      renderBusy = true;
+      frameId = requestAnimationFrame(() => {
+        if (disposed) return;
+        renderDirty = false;
+        controls.update();
+        renderer.render(scene, camera);
+        const done = () => {
+          renderBusy = false;
+          if (renderDirty) requestRender();
+        };
+        if (isSoftwareGl) afterDraw(done);
+        else done();
+      });
+    }
+
+    controls.addEventListener('change', requestRender);
+    requestRender();
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = Math.max(300, entry.contentRect.width);
+        const h = Math.max(280, entry.contentRect.height);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+        requestRender();
+      }
+    });
+    resizeObserver.observe(container);
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(frameId);
+      clearTimeout(frameId);
+      resizeObserver.disconnect();
+      controls.dispose();
+      surfGeo.dispose();
+      surfMat.dispose();
+      wireMat.dispose();
+      renderer.forceContextLoss();
+      renderer.dispose();
+    };
+  }, [gridData]);
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">
+            3D Year × Month Climate Surface — {regionLabel}
+          </h3>
+          <div className="text-xs text-slate-500 mt-0.5">
+            X-Axis: Year ({gridData.years[0]}–{gridData.years[gridData.years.length - 1]}) · Z-Axis: Month (Jan–Dec) · Height: {variableName} ({deseasonalize ? `Δ ${unit}` : unit})
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs font-mono tabular-nums text-slate-600">
+          <span className="text-blue-700">{gridData.minV.toFixed(decimals)}</span>
+          <span className="w-16 h-2 rounded-xs bg-gradient-to-r from-blue-700 via-sky-500 to-amber-600 inline-block" />
+          <span className="text-amber-700">
+            {gridData.maxV.toFixed(decimals)} {unit}
+          </span>
+        </div>
+      </div>
+
+      <div className="relative h-[340px] border border-slate-200 rounded-md overflow-hidden bg-slate-50">
+        {webglError ? (
+          <div className="h-full flex items-center justify-center text-xs text-slate-600 p-4">
+            {webglError}
+          </div>
+        ) : (
+          <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+        )}
+        <div className="pointer-events-none absolute bottom-2.5 left-3 text-[11px] text-slate-500 bg-white/90 border border-slate-200 rounded px-2.5 py-1">
+          Drag to orbit 3D seasonal terrain · Scroll to zoom
+        </div>
+      </div>
+    </div>
+  );
+};
