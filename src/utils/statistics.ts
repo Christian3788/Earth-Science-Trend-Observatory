@@ -383,3 +383,80 @@ export function analyzeTimeSeries(
     verdictTitle = 'Statistically Significant Increasing Trend';
   } else if (bothSig && direction === 'down') {
     verdictTitle = 'Statistically Significant Decreasing Trend';
+  } else if (isSignificant && direction === 'up') {
+    verdictTitle = 'Statistically Significant Increase (Single Test)';
+  } else if (isSignificant && direction === 'down') {
+    verdictTitle = 'Statistically Significant Decrease (Single Test)';
+  } else if (pValOLS < 0.15 || pValMK < 0.15) {
+    verdictTitle =
+      direction === 'up'
+        ? 'Emerging Upward Drift (Not Yet Significant at α = 0.05)'
+        : 'Emerging Downward Drift (Not Yet Significant at α = 0.05)';
+  }
+
+  const confidenceLabel =
+    Math.min(pValOLS, pValMK) < 0.001
+      ? '>99.9% Confidence (p < 0.001)'
+      : Math.min(pValOLS, pValMK) < 0.01
+      ? '>99% Confidence (p < 0.01)'
+      : isSignificant
+      ? '>95% Confidence (p < 0.05)'
+      : 'Below 95% Significance Threshold';
+
+  const rateStr = `${slope >= 0 ? '+' : ''}${(slope * 10).toFixed(3)} ${options.unit}/decade`;
+  const totalStr = `${totalChange >= 0 ? '+' : ''}${totalChange.toFixed(2)} ${options.unit}`;
+
+  let scientificSummary = '';
+  if (isSignificant) {
+    scientificSummary = `In ${options.regionName}, ${options.variableName} shows a statistically significant ${
+      direction === 'up' ? 'upward' : 'downward'
+    } trend of ${rateStr} (${totalStr} total over ${spanYears.toFixed(1)} years).`;
+  } else if (pValOLS < 0.2 && !options.deseasonalize && options.resolution === 'monthly') {
+    scientificSummary = `A drift of ${rateStr} is visible in ${options.regionName}, but seasonal swings mask statistical certainty. Try enabling "Remove Seasonal Cycle" or extending the year range.`;
+  } else {
+    scientificSummary = `Over ${spanYears.toFixed(1)} years in ${options.regionName}, ${options.variableName} changes at ${rateStr}, which cannot yet be distinguished from natural variability at p < 0.05.`;
+  }
+
+  return {
+    ols,
+    mannKendall,
+    points: processedPoints,
+    verdictTitle,
+    verdictDirection: isSignificant ? direction : Math.abs(slope) > 0 ? direction : 'neutral',
+    isSignificant,
+    confidenceLabel,
+    scientificSummary,
+  };
+}
+
+export function formatPValue(p: number): string {
+  if (p < 0.0001) return '< 0.0001';
+  if (p < 0.001) return p.toFixed(4);
+  return p.toFixed(3);
+}
+
+export function buildCSVExport(
+  variableName: string,
+  unit: string,
+  regionName: string,
+  lat: number,
+  lon: number,
+  summary: TrendAnalysisSummary,
+): string {
+  const header = [
+    `# TerraTrend Observatory Export`,
+    `# Variable: ${variableName} (${unit})`,
+    `# Region: ${regionName} (${lat.toFixed(2)}, ${lon.toFixed(2)})`,
+    `# OLS Slope: ${(summary.ols.slopePerDecade).toFixed(4)} ${unit}/decade (p = ${formatPValue(summary.ols.pValue)})`,
+    `# Mann-Kendall tau: ${summary.mannKendall.tau.toFixed(4)} (p = ${formatPValue(summary.mannKendall.pValue)})`,
+    `# Sen's Slope: ${summary.mannKendall.sensSlopePerDecade.toFixed(4)} ${unit}/decade`,
+    `date,decimal_year,value_${unit.replace(/[^a-zA-Z0-9]/g, '_')},linear_trend,ci95_lower,ci95_upper`,
+  ];
+
+  const rows = summary.points.map(
+    (pt) =>
+      `${pt.date},${pt.decimalYear.toFixed(4)},${pt.plotValue.toFixed(4)},${pt.trendValue.toFixed(4)},${pt.ciLower.toFixed(4)},${pt.ciUpper.toFixed(4)}`,
+  );
+
+  return [...header, ...rows].join('\n');
+}
