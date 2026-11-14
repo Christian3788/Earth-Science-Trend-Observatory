@@ -402,3 +402,103 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
       `,
       fragmentShader: `
         uniform vec3 glowColor;
+        varying vec3 vNormal;
+        varying vec3 vViewDir;
+        void main() {
+          float fresnel = pow(1.0 - max(0.0, dot(vNormal, vViewDir)), 3.2);
+          gl_FragColor = vec4(glowColor, fresnel * 0.45);
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      side: THREE.FrontSide,
+      depthWrite: false,
+    });
+    const atmoMesh = new THREE.Mesh(atmoGeo, atmoMat);
+    globeGroup.add(atmoMesh);
+
+    // Subtle 3D Equatorial Orbital Grid Ring
+    const eqRingGeo = new THREE.TorusGeometry(EARTH_RADIUS * 1.012, 0.0035, 8, 128);
+    eqRingGeo.rotateX(Math.PI / 2);
+    const eqRingMat = new THREE.MeshBasicMaterial({
+      color: 0x64748b,
+      transparent: true,
+      opacity: 0.35,
+    });
+    const eqRing = new THREE.Mesh(eqRingGeo, eqRingMat);
+    globeGroup.add(eqRing);
+
+    // Orbiting Earth-Observing Satellite + Track
+    const orbitGroup = new THREE.Group();
+    orbitGroup.rotation.z = THREE.MathUtils.degToRad(58); // Sun-synchronous inclined orbit
+    orbitGroup.rotation.y = THREE.MathUtils.degToRad(25);
+    scene.add(orbitGroup);
+
+    const orbitRadius = EARTH_RADIUS + 0.56;
+    const trackGeo = new THREE.TorusGeometry(orbitRadius, 0.0028, 8, 128);
+    trackGeo.rotateX(Math.PI / 2);
+    const trackMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.25,
+    });
+    const orbitTrack = new THREE.Mesh(trackGeo, trackMat);
+    orbitGroup.add(orbitTrack);
+
+    const satellite = buildCompositeSatellite();
+    orbitGroup.add(satellite);
+
+    // Preset Hotspot Pins (clickable on 3D surface)
+    const presetPinsGroup = new THREE.Group();
+    globeGroup.add(presetPinsGroup);
+    const presetPinMeshes: THREE.Mesh[] = [];
+    const pinGeo = new THREE.SphereGeometry(0.036, 14, 14);
+
+    for (const preset of presetsRef.current) {
+      const pinMat = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        emissive: 0x1e293b,
+        roughness: 0.35,
+        metalness: 0.2,
+      });
+      const pin = new THREE.Mesh(pinGeo, pinMat);
+      latLonToVec3(preset.lat, preset.lon, EARTH_RADIUS + 0.022, pin.position);
+      pin.userData.preset = preset;
+      presetPinsGroup.add(pin);
+      presetPinMeshes.push(pin);
+    }
+
+    // Primary & Compare 3D Markers
+    const primaryMarker = buildRegionMarker(0x2563eb);
+    const compareMarker = buildRegionMarker(0xd97706);
+    globeGroup.add(primaryMarker);
+    globeGroup.add(compareMarker);
+
+    // Great-Circle Comparison Arc Mesh
+    let arcMesh: THREE.Mesh | null = null;
+    const arcMat = new THREE.MeshBasicMaterial({
+      color: 0xf59e0b,
+      transparent: true,
+      opacity: 0.78,
+    });
+
+    const orientMarker = (marker: THREE.Group, lat: number, lon: number) => {
+      latLonToVec3(lat, lon, EARTH_RADIUS, marker.position);
+      _vA.copy(marker.position).normalize();
+      marker.quaternion.setFromUnitVectors(_up, _vA);
+    };
+
+    const updateMarkers = () => {
+      const p = latestPropsRef.current;
+      orientMarker(primaryMarker, p.primaryLat, p.primaryLon);
+      compareMarker.visible = p.compareMode;
+
+      if (arcMesh) {
+        globeGroup.remove(arcMesh);
+        arcMesh.geometry.dispose();
+        arcMesh = null;
+      }
+
+      if (p.compareMode) {
+        orientMarker(compareMarker, p.compareLat, p.compareLon);
+
