@@ -328,3 +328,80 @@ app.get('/api/earth-data', async (req, res) => {
             if (val === -999 || val === null || Number.isNaN(val)) continue;
             if (key.length !== 8) continue;
             const y = Number(key.slice(0, 4));
+            const m = Number(key.slice(4, 6));
+            const d = Number(key.slice(6, 8));
+            if (m < 1 || m > 12 || d < 1 || d > 31) continue;
+            const dayOfYear = (m - 1) * 30.4375 + d;
+            points.push({
+              date: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
+              year: y,
+              month: m,
+              day: d,
+              decimalYear: Number((y + (dayOfYear - 0.5) / 365.25).toFixed(5)),
+              value: Number(val.toFixed(4)),
+            });
+          }
+        } else {
+          for (const [key, val] of Object.entries(rawParam)) {
+            if (val === -999 || val === null || Number.isNaN(val)) continue;
+            if (key.length !== 6) continue;
+            const y = Number(key.slice(0, 4));
+            const m = Number(key.slice(4, 6));
+            // NASA POWER monthly responses include month 13 as the annual mean; skip month 13
+            if (m < 1 || m > 12) continue;
+            points.push({
+              date: `${y}-${String(m).padStart(2, '0')}`,
+              year: y,
+              month: m,
+              decimalYear: Number((y + (m - 0.5) / 12).toFixed(4)),
+              value: Number(val.toFixed(4)),
+            });
+          }
+        }
+
+        points.sort((a, b) => a.decimalYear - b.decimalYear);
+
+          if (points.length >= 6) {
+            const payload = {
+              variable,
+              lat: roundedLat,
+              lon: roundedLon,
+              resolution,
+              sourceType: 'nasa-power-live',
+              sourceLabel: 'NASA POWER Live API (MERRA-2 / CERES / GPM)',
+              points,
+            };
+            responseCache.set(cacheKey, { timestamp: Date.now(), payload });
+            res.json(payload);
+            return;
+          }
+        } catch (err) {
+          console.warn(`NASA POWER fallback for ${variable} (${roundedLat}, ${roundedLon}):`, err);
+        }
+      }
+    }
+
+    const generated = generateCalibratedMissionSeries(variable, roundedLat, roundedLon, startYear, endYear);
+    const payload = {
+      variable,
+      lat: roundedLat,
+      lon: roundedLon,
+      resolution: 'monthly',
+      sourceType: generated.sourceType,
+      sourceLabel: generated.sourceLabel,
+      points: generated.points,
+    };
+    responseCache.set(cacheKey, { timestamp: Date.now(), payload });
+    res.json(payload);
+  } catch (error) {
+    console.error('Error in /api/earth-data:', error);
+    res.status(500).json({ error: 'Unable to acquire Earth observation time series.' });
+  }
+});
+
+interface AnchorPoint {
+  lat: number;
+  lon: number;
+  anomaly: number;
+}
+
