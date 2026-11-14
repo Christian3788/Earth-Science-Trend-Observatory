@@ -292,3 +292,150 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
               <input
                 type="range"
                 min={0.25}
+                max={0.95}
+                step={0.05}
+                value={heatmapOpacity}
+                onChange={(e) => onChangeHeatmapOpacity(Number(e.target.value))}
+                aria-label="Heatmap layer opacity"
+                className="w-16 accent-blue-600 cursor-pointer"
+              />
+            </div>
+          )}
+
+          {heatmapLoading && heatmapEnabled && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-blue-700">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              <span>Computing global grid...</span>
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {compareMode && (
+            <div className="flex items-center gap-1 p-0.5 bg-slate-200/70 rounded-md">
+              <button
+                type="button"
+                onClick={() => onSelectTargetChange('primary')}
+                className={`px-2.5 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  activeSelectionTarget === 'primary'
+                    ? 'bg-white text-blue-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Set Region A
+              </button>
+              <button
+                type="button"
+                onClick={() => onSelectTargetChange('compare')}
+                className={`px-2.5 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  activeSelectionTarget === 'compare'
+                    ? 'bg-white text-amber-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Set Region B
+              </button>
+            </div>
+          )}
+
+          <div className="font-mono tabular-nums text-xs text-slate-700 bg-white border border-slate-200 rounded px-2.5 py-1 text-right">
+            {hoverCoords
+              ? formatCoord(hoverCoords.lat, hoverCoords.lon)
+              : formatCoord(primaryLat, primaryLon)}
+            {hoveredDeviation !== null && (
+              <span
+                className={`ml-2 font-semibold ${
+                  hoveredDeviation > 0 ? 'text-amber-700' : hoveredDeviation < 0 ? 'text-blue-700' : 'text-slate-600'
+                }`}
+              >
+                ({sign(hoveredDeviation)}
+                {hoveredDeviation.toFixed(decimals)} {unit})
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Layered Spatial Viewport: Heatmap Canvas + Vector Coastlines SVG */}
+      <div className="relative bg-slate-100 select-none">
+        {heatmapEnabled && heatmapData && (
+          <canvas
+            ref={canvasRef}
+            width={HEATMAP_W}
+            height={HEATMAP_H}
+            style={{ opacity: heatmapOpacity }}
+            className="absolute inset-0 w-full h-full pointer-events-none"
+          />
+        )}
+
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+          className="relative z-10 w-full h-auto block cursor-crosshair"
+          onClick={handleMapClick}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => {
+            setHoverCoords(null);
+            setHoveredPreset(null);
+          }}
+          role="img"
+          aria-label="Interactive Equirectangular World Map with Spatial Anomaly Heatmap"
+        >
+          {/* Graticules */}
+          {lonGrid.map((lon) => (
+            <line
+              key={`lon-${lon}`}
+              x1={lonToX(lon)}
+              y1={0}
+              x2={lonToX(lon)}
+              y2={SVG_H}
+              stroke={heatmapEnabled ? 'rgba(15, 23, 42, 0.14)' : '#E2E8F0'}
+              strokeWidth={lon === 0 ? 1 : 0.75}
+            />
+          ))}
+          {latGrid.map((lat) => (
+            <line
+              key={`lat-${lat}`}
+              x1={0}
+              y1={latToY(lat)}
+              x2={SVG_W}
+              y2={latToY(lat)}
+              stroke={
+                heatmapEnabled
+                  ? lat === 0
+                    ? 'rgba(15, 23, 42, 0.28)'
+                    : 'rgba(15, 23, 42, 0.14)'
+                  : lat === 0
+                  ? '#CBD5E1'
+                  : '#E2E8F0'
+              }
+              strokeWidth={lat === 0 ? 1.1 : 0.75}
+              strokeDasharray={lat === 0 ? '4 3' : undefined}
+            />
+          ))}
+
+          {/* Arctic & Antarctic Circles */}
+          <line
+            x1={0}
+            y1={latToY(66.5)}
+            x2={SVG_W}
+            y2={latToY(66.5)}
+            stroke={heatmapEnabled ? 'rgba(15, 23, 42, 0.2)' : '#CBD5E1'}
+            strokeWidth={0.7}
+            strokeDasharray="2 4"
+          />
+          <line
+            x1={0}
+            y1={latToY(-66.5)}
+            x2={SVG_W}
+            y2={latToY(-66.5)}
+            stroke={heatmapEnabled ? 'rgba(15, 23, 42, 0.2)' : '#CBD5E1'}
+            strokeWidth={0.7}
+            strokeDasharray="2 4"
+          />
+
+          {/* Landmasses (Translucent over heatmap so anomalies show clearly across continents) */}
+          <g
+            fill={heatmapEnabled ? 'rgba(255, 255, 255, 0.06)' : '#FFFFFF'}
+            stroke={heatmapEnabled ? '#1E293B' : '#94A3B8'}
+            strokeWidth={heatmapEnabled ? 0.75 : 0.6}
