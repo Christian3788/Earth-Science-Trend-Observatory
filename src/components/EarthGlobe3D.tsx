@@ -99,3 +99,104 @@ function buildCompositeSatellite(): THREE.Group {
     metalness: 0.2,
     roughness: 0.1,
   });
+  const lens = new THREE.Mesh(lensGeo, lensMat);
+  lens.position.set(0, -0.095, 0.02);
+  sat.add(lens);
+
+  // 4. Twin Solar Array Wings + Mounting Booms
+  const panelGeo = new THREE.BoxGeometry(0.24, 0.008, 0.09);
+  const panelMat = new THREE.MeshStandardMaterial({
+    color: 0x1d4ed8,
+    metalness: 0.65,
+    roughness: 0.18,
+  });
+  const boomGeo = new THREE.CylinderGeometry(0.006, 0.006, 0.56, 8);
+  boomGeo.rotateZ(Math.PI / 2);
+  const boom = new THREE.Mesh(boomGeo, barrelMat);
+  sat.add(boom);
+
+  const leftWing = new THREE.Mesh(panelGeo, panelMat);
+  leftWing.position.set(-0.2, 0, 0);
+  sat.add(leftWing);
+
+  const rightWing = new THREE.Mesh(panelGeo, panelMat);
+  rightWing.position.set(0.2, 0, 0);
+  sat.add(rightWing);
+
+  // 5. High-Gain Dish Antenna
+  const dishGeo = new THREE.ConeGeometry(0.036, 0.022, 16, 1, true);
+  dishGeo.rotateX(Math.PI);
+  const dishMat = new THREE.MeshStandardMaterial({
+    color: 0xf8fafc,
+    metalness: 0.4,
+    roughness: 0.35,
+    side: THREE.DoubleSide,
+  });
+  const dish = new THREE.Mesh(dishGeo, dishMat);
+  dish.position.set(0, 0.06, -0.03);
+  sat.add(dish);
+
+  // 6. Subtle Nadir Sensor Swath Cone
+  const swathGeo = new THREE.ConeGeometry(0.18, 0.45, 24, 1, true);
+  swathGeo.translate(0, -0.225, 0);
+  const swathMat = new THREE.MeshBasicMaterial({
+    color: 0x38bdf8,
+    transparent: true,
+    opacity: 0.14,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const swath = new THREE.Mesh(swathGeo, swathMat);
+  swath.position.set(0, -0.08, 0.02);
+  sat.add(swath);
+
+  return sat;
+}
+
+function buildRegionMarker(colorHex: number): THREE.Group {
+  const group = new THREE.Group();
+
+  // Base Ring flush on globe
+  const ringGeo = new THREE.RingGeometry(0.032, 0.052, 28);
+  ringGeo.rotateX(-Math.PI / 2);
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: colorHex,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.9,
+  });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.position.y = 0.004;
+  group.add(ring);
+
+  // Vertical Telemetry Stem
+  const stemGeo = new THREE.CylinderGeometry(0.009, 0.012, 0.22, 12);
+  stemGeo.translate(0, 0.11, 0);
+  const stemMat = new THREE.MeshStandardMaterial({
+    color: colorHex,
+    emissive: colorHex,
+    emissiveIntensity: 0.35,
+    metalness: 0.3,
+    roughness: 0.35,
+  });
+  const stem = new THREE.Mesh(stemGeo, stemMat);
+  group.add(stem);
+
+  // Beacon Crown Sphere
+  const crownGeo = new THREE.SphereGeometry(0.028, 16, 16);
+  const crownMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    emissive: colorHex,
+    emissiveIntensity: 0.65,
+    roughness: 0.2,
+    metalness: 0.1,
+  });
+  const crown = new THREE.Mesh(crownGeo, crownMat);
+  crown.position.y = 0.23;
+  group.add(crown);
+
+  return group;
+}
+
+export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
+  primaryLat,
