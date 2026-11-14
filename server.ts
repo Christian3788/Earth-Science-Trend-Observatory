@@ -252,3 +252,10 @@ function generateCalibratedMissionSeries(
   };
 }
 
+const app = express();
+app.use(express.json());
+
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', service: 'TerraTrend Observatory API' });
+});
+
