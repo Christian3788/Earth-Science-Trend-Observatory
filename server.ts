@@ -259,3 +259,72 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'TerraTrend Observatory API' });
 });
 
+app.get('/api/earth-data', async (req, res) => {
+  try {
+    const lat = Number(req.query.lat);
+    const lon = Number(req.query.lon);
+    const variable = String(req.query.variable || 'T2M');
+    const startYear = Math.max(1981, Math.min(2024, Number(req.query.startYear) || 1985));
+    const endYear = Math.max(startYear + 1, Math.min(2025, Number(req.query.endYear) || 2024));
+    const resolution = req.query.resolution === 'daily' ? 'daily' : 'monthly';
+
+    if (Number.isNaN(lat) || Number.isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      res.status(400).json({ error: 'Coordinates out of valid Earth bounds (-90..90, -180..180).' });
+      return;
+    }
+
+    const roundedLat = Number(lat.toFixed(2));
+    const roundedLon = Number(lon.toFixed(2));
+    const cacheKey = `${variable}:${roundedLat}:${roundedLon}:${startYear}:${endYear}:${resolution}`;
+
+    const cached = responseCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      res.json(cached.payload);
+      return;
+    }
+
+    if (NASA_POWER_PARAMS.has(variable)) {
+      const nasaCfg = getNasaPowerConfig(variable);
+      const effectiveMonthlyStart = Math.max(nasaCfg.minYear, startYear);
+      if (endYear > effectiveMonthlyStart) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+          let url = '';
+          if (resolution === 'daily') {
+            // For daily resolution, NASA POWER supports multi-year spans cleanly; cap daily span to max 5 years so payloads stay responsive
+            const effectiveDailyStart = Math.max(nasaCfg.minYear, startYear, endYear - 4);
+            url = `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=${encodeURIComponent(
+              nasaCfg.param,
+            )}&community=RE&longitude=${roundedLon}&latitude=${roundedLat}&start=${effectiveDailyStart}0101&end=${endYear}1231&format=JSON`;
+          } else {
+            url = `https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=${encodeURIComponent(
+              nasaCfg.param,
+            )}&community=RE&longitude=${roundedLon}&latitude=${roundedLat}&start=${effectiveMonthlyStart}&end=${endYear}&format=JSON`;
+          }
+
+          const upstream = await fetch(url, { signal: controller.signal });
+          clearTimeout(timeoutId);
+
+          if (!upstream.ok) {
+            throw new Error(`NASA POWER HTTP ${upstream.status}`);
+          }
+
+          const json = (await upstream.json()) as {
+            properties?: { parameter?: Record<string, Record<string, number>> };
+          };
+
+          const paramMap = json?.properties?.parameter;
+          const rawParam = paramMap?.[nasaCfg.param] ?? (paramMap ? Object.values(paramMap)[0] : undefined);
+          if (!rawParam) {
+            throw new Error('NASA POWER response missing parameter data');
+          }
+
+        const points: TimeSeriesPoint[] = [];
+
+        if (resolution === 'daily') {
+          for (const [key, val] of Object.entries(rawParam)) {
+            if (val === -999 || val === null || Number.isNaN(val)) continue;
+            if (key.length !== 8) continue;
+            const y = Number(key.slice(0, 4));
