@@ -805,3 +805,103 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
                 }`}
               >
                 Set Region A
+              </button>
+              <button
+                type="button"
+                onClick={() => onSelectTargetChange('compare')}
+                className={`px-2.5 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  activeSelectionTarget === 'compare'
+                    ? 'bg-white text-amber-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Set Region B
+              </button>
+            </div>
+          )}
+
+          <div className="font-mono tabular-nums text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded px-2.5 py-1 min-w-[150px] text-right">
+            {hoverCoords
+              ? formatCoord(hoverCoords.lat, hoverCoords.lon)
+              : formatCoord(primaryLat, primaryLon)}
+          </div>
+        </div>
+      </div>
+
+      {/* 3D Canvas Stage */}
+      <div className="relative w-full h-[380px] sm:h-[430px] bg-[#0b1220]">
+        {webglError ? (
+          <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-slate-200">
+            {webglError}
+          </div>
+        ) : (
+          <div ref={mountRef} className="w-full h-full" />
+        )}
+
+        {/* Active Region Readout HUD (Top-Left, solid surface, zero backdrop-blur) */}
+        <div className="pointer-events-none absolute top-3 left-3 flex flex-col gap-1.5">
+          <div className="bg-slate-900/90 border border-slate-700 rounded px-3 py-1.5 text-xs text-slate-100">
+            <span className="text-blue-400 font-semibold">
+              {compareMode ? 'A · ' : ''}
+              {primaryLabel}
+            </span>
+            <span className="font-mono tabular-nums text-slate-300 ml-2">
+              {formatCoord(primaryLat, primaryLon)}
+            </span>
+          </div>
+          {compareMode && (
+            <div className="bg-slate-900/90 border border-slate-700 rounded px-3 py-1.5 text-xs text-slate-100">
+              <span className="text-amber-400 font-semibold">B · {compareLabel}</span>
+              <span className="font-mono tabular-nums text-slate-300 ml-2">
+                {formatCoord(compareLat, compareLon)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Hovered Preset Info */}
+        {hoveredPreset && (
+          <div className="pointer-events-none absolute bottom-14 left-3 bg-slate-900/95 border border-slate-700 rounded-md px-3 py-2 max-w-xs text-slate-100">
+            <div className="text-xs font-semibold">{hoveredPreset.name}</div>
+            <div className="text-[11px] text-slate-300 mt-0.5">
+              {hoveredPreset.biomeLabel} · {formatCoord(hoveredPreset.lat, hoveredPreset.lon)}
+            </div>
+          </div>
+        )}
+
+        {/* Compact Bottom Control Strip (Zero Viewport Center Occlusion) */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-slate-900/92 border border-slate-700 rounded-md px-2.5 py-1.5">
+          <button
+            type="button"
+            onClick={() => setShowSatellite((s) => !s)}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              showSatellite ? 'bg-sky-500/20 text-sky-300' : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            <Orbit className="w-3.5 h-3.5" />
+            <span>Satellite Orbit</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setAutoRotate((r) => !r)}
+            className={`px-2.5 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              autoRotate ? 'bg-blue-600 text-white' : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            Auto-Spin
+          </button>
+
+          <button
+            type="button"
+            onClick={() => sceneSyncRef.current.resetView?.()}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-slate-300 hover:text-white rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Focus Region</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
