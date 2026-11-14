@@ -200,3 +200,104 @@ function buildRegionMarker(colorHex: number): THREE.Group {
 
 export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
   primaryLat,
+  primaryLon,
+  primaryLabel,
+  compareMode,
+  compareLat,
+  compareLon,
+  compareLabel,
+  activeSelectionTarget,
+  onSelectTargetChange,
+  onSelectCoordinate,
+  presets,
+  activePresetId,
+  comparePresetId,
+}) => {
+  const mountRef = useRef<HTMLDivElement | null>(null);
+
+  const [hoverCoords, setHoverCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [hoveredPreset, setHoveredPreset] = useState<PresetRegion | null>(null);
+  const [autoRotate, setAutoRotate] = useState<boolean>(false);
+  const [showSatellite, setShowSatellite] = useState<boolean>(true);
+  const [webglError, setWebglError] = useState<string | null>(null);
+
+  // Mutable refs so React prop changes update Three.js without re-creating renderer
+  const callbacksRef = useRef({ onSelectCoordinate });
+  callbacksRef.current = { onSelectCoordinate };
+
+  const presetsRef = useRef(presets);
+  presetsRef.current = presets;
+
+  const autoRotateRef = useRef(autoRotate);
+  autoRotateRef.current = autoRotate;
+
+  const showSatelliteRef = useRef(showSatellite);
+  showSatelliteRef.current = showSatellite;
+
+  // Shared state object synchronized from React props to Three.js scene
+  const sceneSyncRef = useRef<{
+    updateMarkers?: () => void;
+    focusOnLatLon?: (lat: number, lon: number) => void;
+    resetView?: () => void;
+  }>({});
+
+  const latestPropsRef = useRef({
+    primaryLat,
+    primaryLon,
+    compareMode,
+    compareLat,
+    compareLon,
+    activePresetId,
+    comparePresetId,
+  });
+  latestPropsRef.current = {
+    primaryLat,
+    primaryLon,
+    compareMode,
+    compareLat,
+    compareLon,
+    activePresetId,
+    comparePresetId,
+  };
+
+  useEffect(() => {
+    const container = mountRef.current;
+    if (!container) return;
+
+    // Software-WebGL probe
+    const isSoftwareGl = (() => {
+      try {
+        const probe = document.createElement('canvas').getContext('webgl2');
+        if (!probe) return true;
+        const ext = probe.getExtension('WEBGL_debug_renderer_info');
+        const param = ext ? ext.UNMASKED_RENDERER_WEBGL : probe.RENDERER;
+        const gpu = String(probe.getParameter(param));
+        probe.getExtension('WEBGL_lose_context')?.loseContext();
+        return /SwiftShader|llvmpipe|softpipe|Software|Basic Render/i.test(gpu);
+      } catch {
+        return true;
+      }
+    })();
+
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: !isSoftwareGl,
+        powerPreference: 'high-performance',
+      });
+    } catch {
+      setWebglError('WebGL 3D rendering is unavailable in this browser context. Switch to 2D Map view.');
+      return;
+    }
+
+    const width = Math.max(320, container.clientWidth);
+    const height = Math.max(320, container.clientHeight);
+
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
+    renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(width, height);
+    container.innerHTML = '';
+    container.appendChild(renderer.domElement);
+
