@@ -698,3 +698,50 @@ app.get('/api/geocode', async (req, res) => {
             id: number;
             name: string;
             latitude: number;
+            longitude: number;
+            country?: string;
+            admin1?: string;
+            feature_code?: string;
+          }>;
+        };
+
+        if (Array.isArray(json.results)) {
+          cityMatches = json.results.map((item) => {
+            const parts = [item.admin1, item.country].filter(Boolean);
+            return {
+              id: `om-${item.id}`,
+              name: item.name,
+              subtitle: parts.length > 0 ? parts.join(', ') : 'Global Location',
+              lat: Number(item.latitude.toFixed(2)),
+              lon: Number(item.longitude.toFixed(2)),
+              kind: 'city',
+            };
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Open-Meteo geocode fallback to feature catalog:', err);
+    }
+
+    // Combine geographic features + live geocoded cities/places, avoiding near-identical names
+    const combined: GeocodeResult[] = [...featureMatches];
+    for (const c of cityMatches) {
+      if (combined.length >= 7) break;
+      const dup = combined.some(
+        (existing) =>
+          existing.name.toLowerCase() === c.name.toLowerCase() &&
+          Math.abs(existing.lat - c.lat) < 0.5 &&
+          Math.abs(existing.lon - c.lon) < 0.5,
+      );
+      if (!dup) combined.push(c);
+    }
+
+    const payload = { results: combined };
+    responseCache.set(cacheKey, { timestamp: Date.now(), payload });
+    res.json(payload);
+  } catch (error) {
+    console.error('Error in /api/geocode:', error);
+    res.status(500).json({ results: [], error: 'Geocoding lookup failed.' });
+  }
+});
+
