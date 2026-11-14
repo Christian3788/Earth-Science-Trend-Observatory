@@ -603,3 +603,104 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
       setHoveredPreset(null);
       const earthHits = raycaster.intersectObject(earthMesh, false);
       if (earthHits.length > 0 && earthHits[0].uv) {
+        const uv = earthHits[0].uv;
+        const lon = Number((uv.x * 360 - 180).toFixed(2));
+        const lat = Number((uv.y * 180 - 90).toFixed(2));
+        setHoverCoords({ lat, lon });
+        renderer.domElement.style.cursor = 'crosshair';
+      } else {
+        setHoverCoords(null);
+        renderer.domElement.style.cursor = 'grab';
+      }
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      const distSq = (e.clientX - downX) ** 2 + (e.clientY - downY) ** 2;
+      if (distSq > 25) return; // Dragged globe, do not select coordinate
+
+      updatePointer(e);
+      raycaster.setFromCamera(pointer, camera);
+
+      const pinHits = raycaster.intersectObjects(presetPinMeshes, false);
+      if (pinHits.length > 0) {
+        const preset = pinHits[0].object.userData.preset as PresetRegion;
+        callbacksRef.current.onSelectCoordinate(preset.lat, preset.lon, preset);
+        return;
+      }
+
+      const earthHits = raycaster.intersectObject(earthMesh, false);
+      if (earthHits.length > 0 && earthHits[0].uv) {
+        const uv = earthHits[0].uv;
+        const lon = Number((uv.x * 360 - 180).toFixed(2));
+        const lat = Number((uv.y * 180 - 90).toFixed(2));
+        callbacksRef.current.onSelectCoordinate(lat, lon);
+      }
+    };
+
+    renderer.domElement.addEventListener('pointerdown', onPointerDown);
+    renderer.domElement.addEventListener('pointermove', onPointerMove);
+    renderer.domElement.addEventListener('pointerup', onPointerUp);
+
+    // ResizeObserver for crisp container responsiveness
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = Math.max(300, entry.contentRect.width);
+        const h = Math.max(300, entry.contentRect.height);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      }
+    });
+    resizeObserver.observe(container);
+
+    if (!isSoftwareGl) {
+      renderer.compile(scene, camera);
+    }
+
+    // Animation loop with Software-WebGL afterDraw pacing
+    let frameId = 0;
+    let disposed = false;
+    const clock = new THREE.Clock();
+    let orbitAngle = 0.6;
+
+    function afterDraw(cb: () => void) {
+      const gl = renderer.getContext() as WebGL2RenderingContext;
+      const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+      gl.flush();
+      const poll = () => {
+        if (disposed) {
+          if (sync) gl.deleteSync(sync);
+          return;
+        }
+        const state = sync && gl.getSyncParameter(sync, gl.SYNC_STATUS);
+        if (state === gl.UNSIGNALED) {
+          frameId = window.setTimeout(poll, 5);
+        } else {
+          if (sync) gl.deleteSync(sync);
+          frameId = window.setTimeout(cb, 80);
+        }
+      };
+      frameId = window.setTimeout(poll, 5);
+    }
+
+    function tick() {
+      if (disposed) return;
+      const delta = Math.min(0.1, clock.getDelta());
+
+      // Orbiting satellite kinematics
+      orbitGroup.visible = showSatelliteRef.current;
+      orbitTrack.visible = showSatelliteRef.current;
+      if (showSatelliteRef.current) {
+        orbitAngle += delta * 0.35;
+        _satPos.set(Math.cos(orbitAngle) * orbitRadius, 0, Math.sin(orbitAngle) * orbitRadius);
+        satellite.position.copy(_satPos);
+        // Point nadir radiometer (-Y) toward Earth center (0,0,0)
+        _vA.copy(_satPos).normalize();
+        satellite.quaternion.setFromUnitVectors(_up, _vA);
+      }
+
+      // Smooth exponential camera glide toward newly chosen region
+      if (cameraFocusActive) {
+        const currentDist = camera.position.length();
+        const targetDist = _camTargetPos.length();
+        const nextDist = THREE.MathUtils.damp(currentDist, targetDist, 5.5, delta);
