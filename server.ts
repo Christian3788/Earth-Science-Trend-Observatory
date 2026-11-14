@@ -39,3 +39,25 @@ const NASA_POWER_PARAMS = new Set([
   'SRF_ALB',
 ]);
 
+function getNasaPowerConfig(variable: string): { param: string; minYear: number } {
+  switch (variable) {
+    case 'SRF_ALB':
+      return { param: 'ALLSKY_SRF_ALB', minYear: 2001 };
+    case 'ALLSKY_SFC_SW_DWN':
+    case 'CLOUD_AMT':
+      return { param: variable, minYear: 1984 };
+    default:
+      return { param: variable, minYear: 1981 };
+  }
+}
+
+// Deterministic PRNG for physically calibrated mission-reference profiles
+function seededRandom(seed: number): () => number {
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
