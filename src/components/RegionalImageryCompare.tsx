@@ -162,22 +162,22 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
   return (
     <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
       {/* Header Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 bg-slate-50/70">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 bg-slate-50">
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="flex items-center gap-1.5">
             <Satellite className="w-4 h-4 text-blue-600" />
-            <span className="text-xs font-semibold text-slate-900">
+            <span className="text-sm font-bold text-slate-950">
               Real NASA Satellite Change Imagery
             </span>
           </div>
 
           {compareMode && (
-            <div className="flex items-center gap-0.5 p-0.5 bg-slate-200/70 rounded-md">
+            <div className="flex items-center gap-0.5 p-0.5 bg-slate-200/80 rounded-md">
               <button
                 type="button"
                 onClick={() => setCompareAxis('temporal')}
-                className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  compareAxis === 'temporal' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  compareAxis === 'temporal' ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-700 hover:text-slate-950'
                 }`}
               >
                 Time Change ({beforeYear} vs {afterYear})
@@ -185,8 +185,8 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
               <button
                 type="button"
                 onClick={() => setCompareAxis('regions')}
-                className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  compareAxis === 'regions' ? 'bg-white text-amber-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  compareAxis === 'regions' ? 'bg-white text-amber-800 shadow-xs' : 'text-slate-700 hover:text-slate-950'
                 }`}
               >
                 Region A vs Region B
@@ -195,8 +195,8 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
           )}
 
           {isLoadingImages && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-blue-700">
-              <Loader2 className="w-3 h-3 animate-spin" />
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
               <span>Acquiring NASA GIBS imagery...</span>
             </span>
           )}
@@ -208,7 +208,7 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
             aria-label="Satellite imagery layer"
             value={layer}
             onChange={(e) => setLayer(e.target.value as SatelliteLayerKind)}
-            className="text-xs bg-white border border-slate-200 rounded px-2 py-1 text-slate-800 focus:outline-none focus:border-blue-500 cursor-pointer"
+            className="text-xs font-medium bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 focus:outline-none focus:border-blue-600 cursor-pointer"
           >
             <option value="truecolor">True Color (MODIS)</option>
             <option value="lst">Land Surface Temp (MODIS)</option>
@@ -221,7 +221,7 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
             aria-label="Capture month"
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
-            className="text-xs bg-white border border-slate-200 rounded px-2 py-1 text-slate-800 focus:outline-none focus:border-blue-500 cursor-pointer"
+            className="text-xs font-medium bg-white border border-slate-300 rounded px-2.5 py-1.5 text-slate-900 focus:outline-none focus:border-blue-600 cursor-pointer"
           >
             {MONTH_NAMES.map((m, idx) => (
               <option key={m} value={idx + 1}>
@@ -231,7 +231,7 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
           </select>
 
           {/* Spatial Zoom Span */}
-          <div className="flex items-center gap-0.5 p-0.5 bg-slate-200/70 rounded-md">
+          <div className="flex items-center gap-0.5 p-0.5 bg-slate-200/80 rounded-md">
             {[
               { label: 'Local', val: 1.2 },
               { label: 'Basin', val: 2.4 },
@@ -241,8 +241,8 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
                 key={z.label}
                 type="button"
                 onClick={() => setSpan(z.val)}
-                className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  span === z.val ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  span === z.val ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-700 hover:text-slate-950'
                 }`}
               >
                 {z.label}
@@ -251,25 +251,25 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
           </div>
 
           {/* Wipe vs Side-by-Side Layout */}
-          <div className="flex items-center gap-0.5 p-0.5 bg-slate-200/70 rounded-md">
+          <div className="flex items-center gap-0.5 p-0.5 bg-slate-200/80 rounded-md">
             <button
               type="button"
               onClick={() => setViewLayout('swipe')}
-              className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                viewLayout === 'swipe' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                viewLayout === 'swipe' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-700 hover:text-slate-950'
               }`}
             >
-              <MoveHorizontal className="w-3 h-3" />
+              <MoveHorizontal className="w-3.5 h-3.5" />
               <span>Split Wipe</span>
             </button>
             <button
               type="button"
               onClick={() => setViewLayout('sidebyside')}
-              className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                viewLayout === 'sidebyside' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                viewLayout === 'sidebyside' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-700 hover:text-slate-950'
               }`}
             >
-              <Columns2 className="w-3 h-3" />
+              <Columns2 className="w-3.5 h-3.5" />
               <span>Side-by-Side</span>
             </button>
           </div>
@@ -313,7 +313,7 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
 
           {/* Center Target Crosshair */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="w-7 h-7 border border-white/75 rounded-full flex items-center justify-center">
+            <div className="w-7 h-7 border border-white/80 rounded-full flex items-center justify-center">
               <div className="w-1.5 h-1.5 rounded-full bg-white" />
             </div>
           </div>
@@ -323,27 +323,27 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
             className="pointer-events-none absolute top-0 bottom-0 w-0.5 bg-white shadow-sm"
             style={{ left: `${sliderPct}%` }}
           >
-            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-slate-900 border-2 border-white text-white flex items-center justify-center shadow-md">
+            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-slate-950 border-2 border-white text-white flex items-center justify-center shadow-md">
               <MoveHorizontal className="w-4 h-4" />
             </div>
           </div>
 
           {/* Corner Capture Labels (Solid surface, tabular-nums) */}
-          <div className="pointer-events-none absolute top-3 left-3 bg-slate-950/88 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-white">
-            <div className="font-semibold">{leftSpec.title}</div>
-            <div className="font-mono tabular-nums text-[11px] text-slate-300">
+          <div className="pointer-events-none absolute top-3 left-3 bg-slate-950/92 border border-slate-600 rounded px-3 py-1.5 text-xs text-white">
+            <div className="font-bold">{leftSpec.title}</div>
+            <div className="font-mono tabular-nums text-xs text-slate-200">
               {MONTH_NAMES[month - 1]} {leftSpec.year} · {leftSpec.coord}
             </div>
           </div>
 
-          <div className="pointer-events-none absolute top-3 right-3 bg-slate-950/88 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-white text-right">
-            <div className="font-semibold">{rightSpec.title}</div>
-            <div className="font-mono tabular-nums text-[11px] text-slate-300">
+          <div className="pointer-events-none absolute top-3 right-3 bg-slate-950/92 border border-slate-600 rounded px-3 py-1.5 text-xs text-white text-right">
+            <div className="font-bold">{rightSpec.title}</div>
+            <div className="font-mono tabular-nums text-xs text-slate-200">
               {MONTH_NAMES[month - 1]} {rightSpec.year} · {rightSpec.coord}
             </div>
           </div>
 
-          <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-950/85 border border-slate-700 rounded px-3 py-1 text-[11px] text-slate-200 whitespace-nowrap">
+          <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 bg-slate-950/92 border border-slate-600 rounded px-3.5 py-1.5 text-xs font-medium text-white whitespace-nowrap">
             Drag slider horizontally to compare {leftSpec.year} vs {rightSpec.year} satellite capture
           </div>
         </div>
@@ -359,13 +359,13 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
                 className="w-full h-full object-cover"
               />
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <div className="w-6 h-6 border border-white/75 rounded-full flex items-center justify-center">
+                <div className="w-6 h-6 border border-white/80 rounded-full flex items-center justify-center">
                   <div className="w-1.5 h-1.5 rounded-full bg-white" />
                 </div>
               </div>
-              <div className="pointer-events-none absolute top-3 left-3 bg-slate-950/88 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-white">
-                <div className="font-semibold">{spec.title}</div>
-                <div className="font-mono tabular-nums text-[11px] text-slate-300">
+              <div className="pointer-events-none absolute top-3 left-3 bg-slate-950/92 border border-slate-600 rounded px-3 py-1.5 text-xs text-white">
+                <div className="font-bold">{spec.title}</div>
+                <div className="font-mono tabular-nums text-xs text-slate-200">
                   {MONTH_NAMES[month - 1]} {spec.year} · {spec.coord}
                 </div>
               </div>
@@ -375,12 +375,12 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
       )}
 
       {/* Footer Note */}
-      <div className="px-4 py-2 border-t border-slate-200 bg-white flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+      <div className="px-4 py-2.5 border-t border-slate-200 bg-white flex flex-wrap items-center justify-between gap-2 text-xs text-slate-700 font-medium">
         <span>
           {layerDescriptions[layer]} · Field of view: ±{span.toFixed(1)}° latitude centered on selected coordinate
         </span>
         {startYear < minLayerYear && compareAxis === 'temporal' && (
-          <span className="text-slate-600">
+          <span className="text-slate-800 font-semibold">
             Note: MODIS/AMSR satellite photography begins in {minLayerYear}; earlier baseline clamped to {minLayerYear}.
           </span>
         )}

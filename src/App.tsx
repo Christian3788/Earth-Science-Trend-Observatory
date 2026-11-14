@@ -341,46 +341,46 @@ export default function App() {
   const currentDemoStep = activeDemo ? activeDemo.steps[demoStepIndex] : null;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-950 flex flex-col">
       {/* 3-Zone Top Bar Contract */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xs border-b border-slate-200">
-        <div className="max-w-[1440px] mx-auto px-6 h-14 flex items-center justify-between gap-8">
+        <div className="max-w-[1440px] mx-auto px-6 h-15 flex items-center justify-between gap-8">
           <a
             href="#observatory"
-            className="text-lg font-display font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0"
+            className="text-xl font-display font-extrabold tracking-tight text-slate-950 whitespace-nowrap shrink-0"
           >
             TerraTrend
           </a>
 
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-800">
             <a
               href="#observatory"
-              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+              className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0"
             >
               Observatory
             </a>
             <button
               type="button"
               onClick={() => setDetectiveOpen(true)}
-              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               Data Detective
             </button>
             <a
               href="#demonstrations"
-              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+              className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0"
             >
               Demonstrations
             </a>
             <a
               href="#methodology"
-              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+              className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0"
             >
               Methodology
             </a>
             <a
               href="#resources"
-              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+              className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0"
             >
               Resources
             </a>
@@ -390,7 +390,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => startDemo(DEMONSTRATION_CASES[0])}
-              className="px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="px-4 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               Run Guided Demo
             </button>
@@ -403,10 +403,10 @@ export default function App() {
         {/* Compact Workspace Title & Action Strip */}
         <div className="flex flex-wrap items-end justify-between gap-4 mb-5">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight text-balance">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight text-balance">
               Earth Science Trend Observatory
             </h1>
-            <p className="text-sm text-slate-600 mt-1 max-w-2xl">
+            <p className="text-sm sm:text-base text-slate-700 mt-1.5 max-w-2xl leading-relaxed">
               Select a NASA satellite or global model variable, pick any region on Earth, remove seasonal cycles, and test whether the long-term trend is statistically significant.
             </p>
           </div>
@@ -415,18 +415,18 @@ export default function App() {
             <button
               type="button"
               onClick={() => setDetectiveOpen(true)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-800 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-900 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <Compass className="w-3.5 h-3.5 text-blue-600" />
+              <Compass className="w-4 h-4 text-blue-700" />
               <span>Data Detective Inquiry</span>
             </button>
             <button
               type="button"
               onClick={handleDownloadCSV}
               disabled={!primarySummary}
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-800 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-40 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-900 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 disabled:opacity-40 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5 text-slate-600" />
+              <Download className="w-4 h-4 text-slate-700" />
               <span>Export CSV</span>
             </button>
           </div>
@@ -434,13 +434,13 @@ export default function App() {
 
         {/* Active Guided Demonstration Walkthrough Banner */}
         {activeDemo && currentDemoStep && (
-          <div className="mb-5 bg-white border border-blue-200 rounded-lg p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="mb-5 bg-white border border-blue-300 rounded-lg p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
               <div>
-                <div className="text-xs text-blue-700 font-medium">
+                <div className="text-xs text-blue-800 font-bold">
                   Guided Case Study · Step {demoStepIndex + 1} of {activeDemo.steps.length}
                 </div>
-                <h2 className="text-sm font-semibold text-slate-900 mt-0.5">
+                <h2 className="text-base font-bold text-slate-950 mt-0.5">
                   {activeDemo.title}: {currentDemoStep.title}
                 </h2>
               </div>
@@ -454,7 +454,7 @@ export default function App() {
                     applyDemoStep(activeDemo, prev);
                   }}
                   disabled={demoStepIndex === 0}
-                  className="p-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  className="p-1.5 rounded border border-slate-300 text-slate-800 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                   aria-label="Previous step"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -462,7 +462,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setDemoPlaying((p) => !p)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border border-slate-200 text-slate-800 hover:bg-slate-50 cursor-pointer whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded border border-slate-300 text-slate-900 hover:bg-slate-50 cursor-pointer whitespace-nowrap shrink-0"
                 >
                   {demoPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                   <span>{demoPlaying ? 'Pause' : 'Auto-Play'}</span>
@@ -475,7 +475,7 @@ export default function App() {
                     applyDemoStep(activeDemo, next);
                   }}
                   disabled={demoStepIndex === activeDemo.steps.length - 1}
-                  className="p-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  className="p-1.5 rounded border border-slate-300 text-slate-800 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                   aria-label="Next step"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -486,25 +486,25 @@ export default function App() {
                     setActiveDemo(null);
                     setDemoPlaying(false);
                   }}
-                  className="p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 ml-1 cursor-pointer"
+                  className="p-1.5 rounded text-slate-600 hover:text-slate-950 hover:bg-slate-100 ml-1 cursor-pointer"
                   aria-label="Exit demonstration"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
-            <p className="text-xs text-slate-700 mt-3 leading-relaxed">{currentDemoStep.narrative}</p>
+            <p className="text-sm text-slate-800 mt-3 leading-relaxed">{currentDemoStep.narrative}</p>
           </div>
         )}
 
         {/* Asymmetric Split Console */}
         <div className="flex flex-col lg:flex-row gap-5 items-start">
           {/* Left Control & Parameter Column */}
-          <aside className="w-full lg:w-[340px] shrink-0 space-y-4">
+          <aside className="w-full lg:w-[350px] shrink-0 space-y-4">
             {/* 1. Region & Comparison Controls */}
             <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3.5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-semibold text-slate-900">1. Region of Interest</h2>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-sm font-bold text-slate-950">1. Region of Interest</h2>
                 <button
                   type="button"
                   onClick={() => {
@@ -512,19 +512,19 @@ export default function App() {
                     setCompareMode(next);
                     if (!next) setActiveSelectionTarget('primary');
                   }}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                     compareMode
-                      ? 'bg-amber-50 text-amber-800 border-amber-300'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-amber-50 text-amber-900 border-amber-400'
+                      : 'bg-slate-50 text-slate-800 border-slate-300 hover:bg-slate-100'
                   }`}
                 >
-                  <ArrowLeftRight className="w-3 h-3" />
+                  <ArrowLeftRight className="w-3.5 h-3.5" />
                   <span>{compareMode ? 'Comparing A vs B' : 'Compare Region B'}</span>
                 </button>
               </div>
 
               <div>
-                <label htmlFor="preset-select" className="block text-[11px] font-medium text-slate-500 mb-1">
+                <label htmlFor="preset-select" className="block text-xs font-semibold text-slate-800 mb-1.5">
                   {compareMode && activeSelectionTarget === 'compare'
                     ? 'Region B Preset Hotspot'
                     : 'Primary Region Preset Hotspot'}
@@ -540,7 +540,7 @@ export default function App() {
                     const preset = PRESET_REGIONS.find((r) => r.id === e.target.value);
                     if (preset) handleMapSelect(preset.lat, preset.lon, preset);
                   }}
-                  className="w-full text-xs bg-white border border-slate-200 rounded-md px-2.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                  className="w-full text-sm font-medium bg-white border border-slate-300 rounded-md px-2.5 py-2 text-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-600"
                 >
                   <option value="custom" disabled>
                     Custom Map Coordinate
@@ -556,7 +556,7 @@ export default function App() {
               {/* Manual Coordinate Inputs */}
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label htmlFor="lat-input" className="block text-[11px] text-slate-500 mb-1">
+                  <label htmlFor="lat-input" className="block text-xs font-semibold text-slate-800 mb-1">
                     {compareMode && activeSelectionTarget === 'compare' ? 'Region B Lat (°)' : 'Latitude (°)'}
                   </label>
                   <input
@@ -578,11 +578,11 @@ export default function App() {
                         setPrimaryLabel(`${val.toFixed(1)}°, ${primaryLon.toFixed(1)}°`);
                       }
                     }}
-                    className="w-full text-xs font-mono tabular-nums bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1.5 text-slate-900"
+                    className="w-full text-sm font-mono font-semibold tabular-nums bg-slate-50 border border-slate-300 rounded-md px-2.5 py-1.5 text-slate-950"
                   />
                 </div>
                 <div>
-                  <label htmlFor="lon-input" className="block text-[11px] text-slate-500 mb-1">
+                  <label htmlFor="lon-input" className="block text-xs font-semibold text-slate-800 mb-1">
                     {compareMode && activeSelectionTarget === 'compare' ? 'Region B Lon (°)' : 'Longitude (°)'}
                   </label>
                   <input
@@ -604,7 +604,7 @@ export default function App() {
                         setPrimaryLabel(`${primaryLat.toFixed(1)}°, ${val.toFixed(1)}°`);
                       }
                     }}
-                    className="w-full text-xs font-mono tabular-nums bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1.5 text-slate-900"
+                    className="w-full text-sm font-mono font-semibold tabular-nums bg-slate-50 border border-slate-300 rounded-md px-2.5 py-1.5 text-slate-950"
                   />
                 </div>
               </div>
@@ -612,21 +612,21 @@ export default function App() {
 
             {/* 2. Earth Science Variable Selector */}
             <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xs font-semibold text-slate-900">2. Earth Science Variable</h2>
-                <span className="text-[11px] font-mono text-slate-500">{selectedVariable.mission}</span>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-sm font-bold text-slate-950">2. Earth Science Variable</h2>
+                <span className="text-xs font-mono font-semibold text-slate-700">{selectedVariable.mission}</span>
               </div>
 
-              <div className="flex flex-wrap gap-1">
+              <div className="flex flex-wrap gap-1.5">
                 {missions.map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setMissionFilter(m)}
-                    className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                       missionFilter === m
                         ? 'bg-slate-900 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+                        : 'bg-slate-100 text-slate-800 hover:bg-slate-200 hover:text-slate-950'
                     }`}
                   >
                     {m === 'GPM / MERRA-2' ? 'GPM' : m}
@@ -634,7 +634,7 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+              <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
                 {visibleVariables.map((v) => {
                   const active = v.id === variableId;
                   return (
@@ -642,17 +642,17 @@ export default function App() {
                       key={v.id}
                       type="button"
                       onClick={() => setVariableId(v.id)}
-                      className={`w-full text-left px-3 py-2 rounded-md border transition-colors cursor-pointer ${
+                      className={`w-full text-left px-3 py-2.5 rounded-md border transition-colors cursor-pointer ${
                         active
-                          ? 'border-blue-600 bg-blue-50/70'
+                          ? 'border-blue-600 bg-blue-50/80'
                           : 'border-slate-200 hover:border-slate-300 bg-white'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold text-slate-900 truncate">{v.name}</span>
-                        <span className="text-[10px] font-mono text-slate-500 shrink-0">{v.unit}</span>
+                        <span className="text-sm font-bold text-slate-950 truncate">{v.name}</span>
+                        <span className="text-xs font-mono font-semibold text-slate-700 shrink-0">{v.unit}</span>
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">
+                      <div className="text-xs font-medium text-slate-700 mt-0.5">
                         {v.mission} · {v.sphere}
                       </div>
                     </button>
@@ -663,18 +663,18 @@ export default function App() {
 
             {/* 3. Time Horizon & Seasonal Removal */}
             <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-4">
-              <h2 className="text-xs font-semibold text-slate-900">3. Time Window & Cycle Removal</h2>
+              <h2 className="text-sm font-bold text-slate-950">3. Time Window & Cycle Removal</h2>
 
               <div>
-                <div className="text-[11px] font-medium text-slate-500 mb-1.5">Temporal Resolution</div>
+                <div className="text-xs font-semibold text-slate-800 mb-1.5">Temporal Resolution</div>
                 <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-md">
                   <button
                     type="button"
                     onClick={() => setResolution('monthly')}
-                    className={`py-1.5 text-xs font-medium rounded transition-colors cursor-pointer ${
+                    className={`py-1.5 text-xs sm:text-sm font-semibold rounded transition-colors cursor-pointer ${
                       resolution === 'monthly'
-                        ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-white text-slate-950 shadow-xs'
+                        : 'text-slate-700 hover:text-slate-950'
                     }`}
                   >
                     Monthly
@@ -682,10 +682,10 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setResolution('annual')}
-                    className={`py-1.5 text-xs font-medium rounded transition-colors cursor-pointer ${
+                    className={`py-1.5 text-xs sm:text-sm font-semibold rounded transition-colors cursor-pointer ${
                       resolution === 'annual'
-                        ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-white text-slate-950 shadow-xs'
+                        : 'text-slate-700 hover:text-slate-950'
                     }`}
                   >
                     Annual
@@ -699,10 +699,10 @@ export default function App() {
                         ? 'Inspect high-frequency daily observations (last 5 years of window)'
                         : 'Daily resolution available for NASA POWER variables'
                     }
-                    className={`py-1.5 text-xs font-medium rounded transition-colors disabled:opacity-40 cursor-pointer ${
+                    className={`py-1.5 text-xs sm:text-sm font-semibold rounded transition-colors disabled:opacity-40 cursor-pointer ${
                       resolution === 'daily'
-                        ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-white text-slate-950 shadow-xs'
+                        : 'text-slate-700 hover:text-slate-950'
                     }`}
                   >
                     Daily
@@ -713,10 +713,10 @@ export default function App() {
               {/* Deseasonalize Toggle */}
               <div className="flex items-start justify-between gap-3 pt-1">
                 <div>
-                  <label htmlFor="deseasonalize-toggle" className="text-xs font-medium text-slate-800 block">
+                  <label htmlFor="deseasonalize-toggle" className="text-sm font-semibold text-slate-950 block">
                     Remove Seasonal Cycle
                   </label>
-                  <span className="text-[11px] text-slate-500">
+                  <span className="text-xs font-medium text-slate-700 leading-snug block mt-0.5">
                     Subtract monthly climatology to isolate long-term anomalies
                   </span>
                 </div>
@@ -731,18 +731,18 @@ export default function App() {
               </div>
 
               {/* Year Range Sliders */}
-              <div className="space-y-2.5 pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-600">Observation Span</span>
-                  <span className="font-mono tabular-nums font-semibold text-slate-900">
+              <div className="space-y-2.5 pt-2 border-t border-slate-200">
+                <div className="flex items-center justify-between text-xs sm:text-sm">
+                  <span className="font-semibold text-slate-800">Observation Span</span>
+                  <span className="font-mono tabular-nums font-bold text-slate-950">
                     {startYear} – {endYear} ({endYear - startYear + 1} yrs)
                   </span>
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-[11px] text-slate-500 mb-0.5">
+                  <div className="flex justify-between text-xs font-semibold text-slate-700 mb-0.5">
                     <span>Start Year</span>
-                    <span className="font-mono tabular-nums">{startYear}</span>
+                    <span className="font-mono font-bold text-slate-950 tabular-nums">{startYear}</span>
                   </div>
                   <input
                     type="range"
@@ -755,9 +755,9 @@ export default function App() {
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-[11px] text-slate-500 mb-0.5">
+                  <div className="flex justify-between text-xs font-semibold text-slate-700 mb-0.5">
                     <span>End Year</span>
-                    <span className="font-mono tabular-nums">{endYear}</span>
+                    <span className="font-mono font-bold text-slate-950 tabular-nums">{endYear}</span>
                   </div>
                   <input
                     type="range"
@@ -776,56 +776,56 @@ export default function App() {
           <div className="flex-1 min-w-0 space-y-4">
             {/* Spatial Projection Switcher */}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-1 p-1 bg-slate-200/70 rounded-md">
+              <div className="flex items-center gap-1 p-1 bg-slate-200/80 rounded-md">
                 <button
                   type="button"
                   onClick={() => setSpatialView('3d')}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                     spatialView === '3d'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-slate-950 shadow-xs'
+                      : 'text-slate-700 hover:text-slate-950'
                   }`}
                 >
-                  <Globe className="w-3.5 h-3.5 text-blue-600" />
+                  <Globe className="w-4 h-4 text-blue-700" />
                   <span>3D Orbital Globe</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setSpatialView('2d')}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                     spatialView === '2d'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-slate-950 shadow-xs'
+                      : 'text-slate-700 hover:text-slate-950'
                   }`}
                 >
-                  <MapIcon className="w-3.5 h-3.5 text-slate-600" />
+                  <MapIcon className="w-4 h-4 text-slate-700" />
                   <span>2D Projection Map</span>
                 </button>
               </div>
 
-              <div className="flex items-center gap-1 p-1 bg-slate-200/70 rounded-md">
+              <div className="flex items-center gap-1 p-1 bg-slate-200/80 rounded-md">
                 <button
                   type="button"
                   onClick={() => setChartView('2d')}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                     chartView === '2d'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-slate-950 shadow-xs'
+                      : 'text-slate-700 hover:text-slate-950'
                   }`}
                 >
-                  <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+                  <TrendingUp className="w-4 h-4 text-blue-700" />
                   <span>Trend & CI Chart</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setChartView('3d')}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                     chartView === '3d'
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-slate-950 shadow-xs'
+                      : 'text-slate-700 hover:text-slate-950'
                   }`}
                 >
-                  <Box className="w-3.5 h-3.5 text-slate-600" />
+                  <Box className="w-4 h-4 text-slate-700" />
                   <span>3D Seasonal Surface</span>
                 </button>
               </div>
@@ -913,17 +913,17 @@ export default function App() {
                 <div className="text-sm">{fetchError}</div>
               </div>
             ) : loadingPrimary && !primarySummary ? (
-              <div className="bg-white border border-slate-200 rounded-lg p-12 flex flex-col items-center justify-center gap-3 text-slate-600">
-                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-                <div className="text-xs font-medium">
+              <div className="bg-white border border-slate-200 rounded-lg p-12 flex flex-col items-center justify-center gap-3 text-slate-700">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-700" />
+                <div className="text-sm font-semibold">
                   Acquiring {selectedVariable.name} observations for {primaryLabel}...
                 </div>
               </div>
             ) : primarySummary ? (
               <div className="relative space-y-4">
                 {(loadingPrimary || loadingCompare) && (
-                  <div className="flex items-center gap-2 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-1.5">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-blue-800 bg-blue-50 border border-blue-200 rounded-md px-3.5 py-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Updating regional Earth observation series...</span>
                   </div>
                 )}
@@ -967,13 +967,13 @@ export default function App() {
       </main>
 
       {/* Guided Demonstration Cases */}
-      <section id="demonstrations" className="border-t border-slate-200 bg-slate-100/60 py-12 px-6">
+      <section id="demonstrations" className="border-t border-slate-200 bg-slate-100/70 py-12 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight">
               Interactive Demonstration Case Studies
             </h2>
-            <p className="text-sm text-slate-600 mt-1 max-w-3xl">
+            <p className="text-base text-slate-700 mt-1.5 max-w-3xl leading-relaxed">
               Watch step-by-step investigations showing how scientists uncover opposite regional trends from a single driver, remove seasonal swings, and test why observation span determines statistical significance.
             </p>
           </div>
@@ -985,24 +985,24 @@ export default function App() {
                 className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between gap-4"
               >
                 <div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs font-semibold text-slate-700">
                     <span>Case Study 0{idx + 1}</span>
                     <span aria-hidden="true"> · </span>
                     <span>{demo.steps.length} Interactive Steps</span>
                   </div>
-                  <h3 className="text-base font-semibold text-slate-900 mt-1">{demo.title}</h3>
-                  <div className="text-xs font-medium text-blue-700 mt-0.5">{demo.subtitle}</div>
-                  <p className="text-xs text-slate-600 mt-2 leading-relaxed">{demo.driverSummary}</p>
+                  <h3 className="text-lg font-bold text-slate-950 mt-1">{demo.title}</h3>
+                  <div className="text-sm font-semibold text-blue-700 mt-0.5">{demo.subtitle}</div>
+                  <p className="text-sm text-slate-700 mt-2 leading-relaxed">{demo.driverSummary}</p>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                  <span className="text-xs text-slate-500">
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100 gap-3">
+                  <span className="text-xs font-medium text-slate-700">
                     Walkthrough configures map, filters & tests
                   </span>
                   <button
                     type="button"
                     onClick={() => startDemo(demo)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                   >
                     <Play className="w-3.5 h-3.5" />
                     <span>Launch Walkthrough</span>
@@ -1027,7 +1027,7 @@ export default function App() {
 
       {/* Clean Footer */}
       <footer className="border-t border-slate-200 bg-white py-6 px-6">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm font-medium text-slate-700">
           <div>
             TerraTrend Observatory · Earth Science Trend & Significance Analysis Workbench
           </div>

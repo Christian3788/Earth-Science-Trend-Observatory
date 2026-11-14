@@ -279,35 +279,35 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
   return (
     <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
       {/* Top Map Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 bg-slate-50/70">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 bg-slate-50">
         <div className="flex flex-wrap items-center gap-2.5">
-          <span className="text-xs font-semibold text-slate-800 tracking-tight">
+          <span className="text-sm font-bold text-slate-950 tracking-tight">
             2D Global Spatial Map
           </span>
 
           <button
             type="button"
             onClick={() => setSatelliteBasemap((v) => !v)}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               satelliteBasemap && !basemapError
                 ? 'bg-slate-900 text-white border-slate-900'
-                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                : 'bg-white text-slate-800 border-slate-300 hover:bg-slate-100'
             }`}
           >
             <span>Blue Marble Basemap</span>
           </button>
 
-          <div className="flex items-center gap-0.5 p-0.5 bg-slate-200/70 rounded-md">
+          <div className="flex items-center gap-0.5 p-0.5 bg-slate-200/80 rounded-md">
             <button
               type="button"
               onClick={() => {
                 setOverlayMode('anomaly');
                 if (!heatmapEnabled) onToggleHeatmap();
               }}
-              className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 heatmapEnabled && overlayMode === 'anomaly'
                   ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  : 'text-slate-700 hover:text-slate-950'
               }`}
             >
               Anomaly Grid
@@ -318,10 +318,10 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
                 setOverlayMode('gibs');
                 if (!heatmapEnabled) onToggleHeatmap();
               }}
-              className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 heatmapEnabled && overlayMode === 'gibs'
                   ? 'bg-white text-blue-700 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  : 'text-slate-700 hover:text-slate-950'
               }`}
             >
               NASA Satellite Layer
@@ -331,10 +331,10 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
               onClick={() => {
                 if (heatmapEnabled) onToggleHeatmap();
               }}
-              className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 !heatmapEnabled
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-slate-950 shadow-xs'
+                  : 'text-slate-700 hover:text-slate-950'
               }`}
             >
               Off
@@ -342,8 +342,8 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
           </div>
 
           {heatmapEnabled && (
-            <div className="flex items-center gap-2 text-[11px] text-slate-600">
-              <Layers className="w-3.5 h-3.5 text-slate-500" />
+            <div className="flex items-center gap-2 text-xs font-medium text-slate-700">
+              <Layers className="w-3.5 h-3.5 text-slate-700" />
               <input
                 type="range"
                 min={0.25}
@@ -358,8 +358,8 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
           )}
 
           {heatmapLoading && heatmapEnabled && overlayMode === 'anomaly' && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-blue-700">
-              <Loader2 className="w-3 h-3 animate-spin" />
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
               <span>Computing global grid...</span>
             </span>
           )}
@@ -367,14 +367,14 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
 
         <div className="flex items-center gap-2">
           {compareMode && (
-            <div className="flex items-center gap-1 p-0.5 bg-slate-200/70 rounded-md">
+            <div className="flex items-center gap-1 p-0.5 bg-slate-200/80 rounded-md">
               <button
                 type="button"
                 onClick={() => onSelectTargetChange('primary')}
-                className={`px-2.5 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   activeSelectionTarget === 'primary'
                     ? 'bg-white text-blue-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-700 hover:text-slate-950'
                 }`}
               >
                 Set Region A
@@ -382,10 +382,10 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
               <button
                 type="button"
                 onClick={() => onSelectTargetChange('compare')}
-                className={`px-2.5 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   activeSelectionTarget === 'compare'
-                    ? 'bg-white text-amber-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-amber-800 shadow-xs'
+                    : 'text-slate-700 hover:text-slate-950'
                 }`}
               >
                 Set Region B
@@ -393,14 +393,14 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
             </div>
           )}
 
-          <div className="font-mono tabular-nums text-xs text-slate-700 bg-white border border-slate-200 rounded px-2.5 py-1 text-right">
+          <div className="font-mono tabular-nums text-xs font-semibold text-slate-900 bg-white border border-slate-300 rounded px-2.5 py-1 text-right">
             {hoverCoords
               ? formatCoord(hoverCoords.lat, hoverCoords.lon)
               : formatCoord(primaryLat, primaryLon)}
             {hoveredDeviation !== null && (
               <span
-                className={`ml-2 font-semibold ${
-                  hoveredDeviation > 0 ? 'text-amber-700' : hoveredDeviation < 0 ? 'text-blue-700' : 'text-slate-600'
+                className={`ml-2 font-bold ${
+                  hoveredDeviation > 0 ? 'text-amber-800' : hoveredDeviation < 0 ? 'text-blue-700' : 'text-slate-700'
                 }`}
               >
                 ({sign(hoveredDeviation)}
@@ -520,10 +520,10 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
           </g>
 
           {/* Latitude axis markers */}
-          <g className="font-mono" fontSize="9" fill={satelliteBasemap && !basemapError ? '#F8FAFC' : '#334155'}>
-            <text x={8} y={latToY(60) - 4}>60°N</text>
-            <text x={8} y={latToY(0) - 4}>0° EQ</text>
-            <text x={8} y={latToY(-60) - 4}>60°S</text>
+          <g className="font-mono" fontSize="11" fontWeight="600" fill={satelliteBasemap && !basemapError ? '#FFFFFF' : '#1E293B'}>
+            <text x={8} y={latToY(60) - 5}>60°N</text>
+            <text x={8} y={latToY(0) - 5}>0° EQ</text>
+            <text x={8} y={latToY(-60) - 5}>60°S</text>
           </g>
 
           {/* Preset Hotspot Markers */}
@@ -548,10 +548,10 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
                 <circle
                   cx={cx}
                   cy={cy}
-                  r={isPrimary || isCompare ? 4.2 : 3.2}
+                  r={isPrimary || isCompare ? 4.4 : 3.4}
                   fill={isPrimary ? '#2563EB' : isCompare ? '#D97706' : '#334155'}
                   stroke="#FFFFFF"
-                  strokeWidth={1.5}
+                  strokeWidth={1.6}
                 />
               </g>
             );
@@ -564,19 +564,19 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
                 cx={lonToX(compareLon)}
                 cy={latToY(compareLat)}
                 r={10}
-                fill="rgba(217, 119, 6, 0.16)"
+                fill="rgba(217, 119, 6, 0.18)"
                 stroke="#D97706"
-                strokeWidth={1.7}
+                strokeWidth={1.8}
               />
-              <circle cx={lonToX(compareLon)} cy={latToY(compareLat)} r={3.5} fill="#D97706" />
+              <circle cx={lonToX(compareLon)} cy={latToY(compareLat)} r={3.8} fill="#D97706" />
               <text
-                x={Math.min(SVG_W - 110, lonToX(compareLon) + 12)}
-                y={Math.max(16, latToY(compareLat) + 4)}
-                fontSize="10"
+                x={Math.min(SVG_W - 130, lonToX(compareLon) + 13)}
+                y={Math.max(18, latToY(compareLat) + 4)}
+                fontSize="12"
                 fontWeight="700"
                 fill="#78350F"
                 stroke="#FFFFFF"
-                strokeWidth={2.5}
+                strokeWidth={3.2}
                 paintOrder="stroke"
                 className="font-sans"
               >
@@ -591,19 +591,19 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
               cx={lonToX(primaryLon)}
               cy={latToY(primaryLat)}
               r={11}
-              fill="rgba(37, 99, 235, 0.16)"
+              fill="rgba(37, 99, 235, 0.18)"
               stroke="#1D4ED8"
-              strokeWidth={1.7}
+              strokeWidth={1.8}
             />
-            <circle cx={lonToX(primaryLon)} cy={latToY(primaryLat)} r={4} fill="#1D4ED8" />
+            <circle cx={lonToX(primaryLon)} cy={latToY(primaryLat)} r={4.2} fill="#1D4ED8" />
             <text
-              x={Math.min(SVG_W - 120, lonToX(primaryLon) + 13)}
-              y={Math.max(16, latToY(primaryLat) - 6)}
-              fontSize="10.5"
+              x={Math.min(SVG_W - 140, lonToX(primaryLon) + 14)}
+              y={Math.max(18, latToY(primaryLat) - 6)}
+              fontSize="12.5"
               fontWeight="700"
               fill="#1E3A8A"
               stroke="#FFFFFF"
-              strokeWidth={2.5}
+              strokeWidth={3.2}
               paintOrder="stroke"
               className="font-sans"
             >
@@ -613,9 +613,9 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
         </svg>
 
         {hoveredPreset && (
-          <div className="pointer-events-none z-20 absolute bottom-3 left-3 bg-white/95 border border-slate-200 rounded-md px-3 py-2 shadow-sm max-w-xs">
-            <div className="text-xs font-semibold text-slate-900">{hoveredPreset.name}</div>
-            <div className="text-[11px] text-slate-500 mt-0.5">
+          <div className="pointer-events-none z-20 absolute bottom-3 left-3 bg-white border border-slate-300 rounded-md px-3.5 py-2.5 shadow-sm max-w-xs">
+            <div className="text-sm font-bold text-slate-950">{hoveredPreset.name}</div>
+            <div className="text-xs font-medium text-slate-700 mt-0.5">
               {hoveredPreset.biomeLabel} · {formatCoord(hoveredPreset.lat, hoveredPreset.lon)}
             </div>
           </div>
@@ -624,34 +624,34 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
 
       {/* Diverging Spatial Heatmap Legend Footer */}
       {heatmapEnabled && overlayMode === 'anomaly' && heatmapData && (
-        <div className="px-4 py-2.5 border-t border-slate-200 bg-white flex flex-wrap items-center justify-between gap-4 text-xs">
-          <div className="flex flex-wrap items-center gap-2 text-slate-700">
-            <span className="font-semibold text-slate-900">
+        <div className="px-4 py-2.5 border-t border-slate-200 bg-white flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-slate-800">
+            <span className="font-bold text-slate-950">
               {variableName} Anomaly Deviation ({heatmapData.startYear}–{heatmapData.endYear})
             </span>
-            <span className="text-slate-400">·</span>
-            <span className="text-slate-500">
+            <span className="text-slate-500">·</span>
+            <span className="text-slate-700 font-medium">
               Global Model Mean Change:{' '}
-              <span className="font-mono tabular-nums font-semibold text-slate-800">
+              <span className="font-mono tabular-nums font-bold text-slate-950">
                 {sign(heatmapData.globalModelMean)}
                 {heatmapData.globalModelMean.toFixed(decimals)} {unit}
               </span>
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5 font-mono tabular-nums text-[11px]">
-            <span className="text-blue-700 font-medium">
+          <div className="flex items-center gap-2.5 font-mono tabular-nums text-xs">
+            <span className="text-blue-700 font-bold">
               −{maxAbsDeviation.toFixed(decimals)} {unit}
             </span>
             <div
-              className="w-40 h-2.5 rounded-xs border border-slate-200"
+              className="w-40 h-2.5 rounded-xs border border-slate-300"
               style={{
                 background:
                   'linear-gradient(to right, #1D4ED8 0%, #38BDF8 25%, #F8FAFC 50%, #F59E0B 75%, #B91C1C 100%)',
               }}
               aria-label="Diverging color scale from negative anomaly through global model mean to positive anomaly"
             />
-            <span className="text-rose-700 font-medium">
+            <span className="text-rose-700 font-bold">
               +{maxAbsDeviation.toFixed(decimals)} {unit}
             </span>
           </div>
@@ -659,12 +659,12 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
       )}
 
       {heatmapEnabled && overlayMode === 'gibs' && (
-        <div className="px-4 py-2.5 border-t border-slate-200 bg-white flex flex-wrap items-center justify-between gap-4 text-xs text-slate-600">
+        <div className="px-4 py-2.5 border-t border-slate-200 bg-white flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm text-slate-700">
           <div>
-            <span className="font-semibold text-slate-900">NASA GIBS Global Satellite Observation:</span>{' '}
+            <span className="font-bold text-slate-950">NASA GIBS Global Satellite Observation:</span>{' '}
             {variableName} ({endYear}) composited over NASA Blue Marble Shaded Relief & Bathymetry.
           </div>
-          <span className="font-mono text-[11px] text-slate-500">Source: NASA EOSDIS GIBS</span>
+          <span className="font-mono text-xs font-semibold text-slate-700">Source: NASA EOSDIS GIBS</span>
         </div>
       )}
     </div>

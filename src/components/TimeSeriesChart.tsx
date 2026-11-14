@@ -179,10 +179,10 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
     <div className="bg-white border border-slate-200 rounded-lg p-4">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">
+          <h3 className="text-base font-bold text-slate-900">
             {variableName} Time Series & Linear Trend
           </h3>
-          <div className="text-xs text-slate-500 mt-0.5 flex flex-wrap items-center gap-2">
+          <div className="text-xs font-medium text-slate-700 mt-0.5 flex flex-wrap items-center gap-2">
             <span>Unit: {displayUnit}</span>
             <span aria-hidden="true">·</span>
             <span>
@@ -195,11 +195,11 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
                 : 'Raw Monthly Observations'}
             </span>
             <span aria-hidden="true">·</span>
-            <span className="font-mono tabular-nums">n = {primarySummary.ols.n}</span>
+            <span className="font-mono font-semibold tabular-nums text-slate-900">n = {primarySummary.ols.n}</span>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600">
+        <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-800">
           <div className="flex items-center gap-1.5">
             <span className="w-4 h-0.5 bg-blue-600 inline-block" />
             <span>{primaryLabel}</span>
@@ -234,10 +234,11 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
                 <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="#E2E8F0" strokeWidth={0.8} />
                 <text
                   x={PAD.left - 10}
-                  y={y + 3.5}
+                  y={y + 4}
                   textAnchor="end"
-                  fontSize="10.5"
-                  fill="#64748B"
+                  fontSize="12"
+                  fontWeight="500"
+                  fill="#334155"
                   className="font-mono tabular-nums"
                 >
                   {tick.toFixed(decimals)}
@@ -267,10 +268,11 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
                 <line x1={x} y1={PAD.top} x2={x} y2={H - PAD.bottom} stroke="#F1F5F9" strokeWidth={1} />
                 <text
                   x={x}
-                  y={H - PAD.bottom + 18}
+                  y={H - PAD.bottom + 20}
                   textAnchor="middle"
-                  fontSize="10.5"
-                  fill="#64748B"
+                  fontSize="12"
+                  fontWeight="500"
+                  fill="#334155"
                   className="font-mono tabular-nums"
                 >
                   {yr}
@@ -367,22 +369,22 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
 
         {/* Compact Monospace Crosshair HUD */}
         {hoveredPrimary && (
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded text-xs font-mono tabular-nums text-slate-700">
+          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-3 px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded text-sm font-mono tabular-nums text-slate-800">
             <div className="flex flex-wrap items-center gap-4">
-              <span className="font-semibold text-slate-900">{hoveredPrimary.date}</span>
-              <span className="text-blue-700">
+              <span className="font-bold text-slate-950">{hoveredPrimary.date}</span>
+              <span className="font-semibold text-blue-700">
                 {primaryLabel}: {hoveredPrimary.plotValue.toFixed(decimals)} {unit}
               </span>
-              <span className="text-slate-500">
+              <span className="text-slate-700 font-medium">
                 Trend: {hoveredPrimary.trendValue.toFixed(decimals)} {unit}
               </span>
               {hoveredCompare && compareLabel && (
-                <span className="text-amber-700">
+                <span className="font-semibold text-amber-800">
                   {compareLabel}: {hoveredCompare.plotValue.toFixed(decimals)} {unit}
                 </span>
               )}
             </div>
-            <span className="text-slate-400">
+            <span className="text-slate-700 font-medium">
               95% CI [{hoveredPrimary.ciLower.toFixed(decimals)}, {hoveredPrimary.ciUpper.toFixed(decimals)}]
             </span>
           </div>

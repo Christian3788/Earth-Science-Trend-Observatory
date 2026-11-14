@@ -286,18 +286,18 @@ export const TimeSeries3DSurface: React.FC<TimeSeries3DSurfaceProps> = ({
     <div className="bg-white border border-slate-200 rounded-lg p-4">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">
+          <h3 className="text-base font-bold text-slate-950">
             3D Year × Month Climate Surface — {regionLabel}
           </h3>
-          <div className="text-xs text-slate-500 mt-0.5">
+          <div className="text-xs font-medium text-slate-700 mt-0.5">
             X-Axis: Year ({gridData.years[0]}–{gridData.years[gridData.years.length - 1]}) · Z-Axis: Month (Jan–Dec) · Height: {variableName} ({deseasonalize ? `Δ ${unit}` : unit})
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono tabular-nums text-slate-600">
+        <div className="flex items-center gap-2 text-xs font-mono font-semibold tabular-nums text-slate-800">
           <span className="text-blue-700">{gridData.minV.toFixed(decimals)}</span>
           <span className="w-16 h-2 rounded-xs bg-gradient-to-r from-blue-700 via-sky-500 to-amber-600 inline-block" />
-          <span className="text-amber-700">
+          <span className="text-amber-800">
             {gridData.maxV.toFixed(decimals)} {unit}
           </span>
         </div>
@@ -305,13 +305,13 @@ export const TimeSeries3DSurface: React.FC<TimeSeries3DSurfaceProps> = ({
 
       <div className="relative h-[340px] border border-slate-200 rounded-md overflow-hidden bg-slate-50">
         {webglError ? (
-          <div className="h-full flex items-center justify-center text-xs text-slate-600 p-4">
+          <div className="h-full flex items-center justify-center text-sm text-slate-800 p-4">
             {webglError}
           </div>
         ) : (
           <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
         )}
-        <div className="pointer-events-none absolute bottom-2.5 left-3 text-[11px] text-slate-500 bg-white/90 border border-slate-200 rounded px-2.5 py-1">
+        <div className="pointer-events-none absolute bottom-2.5 left-3 text-xs font-medium text-slate-800 bg-white/95 border border-slate-300 rounded px-3 py-1">
           Drag to orbit 3D seasonal terrain · Scroll to zoom
         </div>
       </div>
