@@ -439,3 +439,150 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
             fill={heatmapEnabled ? 'rgba(255, 255, 255, 0.06)' : '#FFFFFF'}
             stroke={heatmapEnabled ? '#1E293B' : '#94A3B8'}
             strokeWidth={heatmapEnabled ? 0.75 : 0.6}
+          >
+            {countryPaths.map((d, idx) => (
+              <path key={idx} d={d} />
+            ))}
+          </g>
+
+          {/* Latitude axis markers */}
+          <g className="font-mono" fontSize="9" fill={heatmapEnabled ? '#0F172A' : '#64748B'}>
+            <text x={8} y={latToY(60) - 4}>60°N</text>
+            <text x={8} y={latToY(0) - 4}>0° EQ</text>
+            <text x={8} y={latToY(-60) - 4}>60°S</text>
+          </g>
+
+          {/* Preset Hotspot Markers */}
+          {presets.map((preset) => {
+            const cx = lonToX(preset.lon);
+            const cy = latToY(preset.lat);
+            const isPrimary = activePresetId === preset.id;
+            const isCompare = compareMode && comparePresetId === preset.id;
+
+            return (
+              <g
+                key={preset.id}
+                className="cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectCoordinate(preset.lat, preset.lon, preset);
+                }}
+                onMouseEnter={() => setHoveredPreset(preset)}
+                onMouseLeave={() => setHoveredPreset(null)}
+              >
+                <circle cx={cx} cy={cy} r={10} fill="transparent" />
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={isPrimary || isCompare ? 4.2 : 3.2}
+                  fill={isPrimary ? '#2563EB' : isCompare ? '#D97706' : '#334155'}
+                  stroke="#FFFFFF"
+                  strokeWidth={1.5}
+                />
+              </g>
+            );
+          })}
+
+          {/* Compare Region B Target Crosshair */}
+          {compareMode && (
+            <g pointerEvents="none">
+              <circle
+                cx={lonToX(compareLon)}
+                cy={latToY(compareLat)}
+                r={10}
+                fill="rgba(217, 119, 6, 0.16)"
+                stroke="#D97706"
+                strokeWidth={1.7}
+              />
+              <circle cx={lonToX(compareLon)} cy={latToY(compareLat)} r={3.5} fill="#D97706" />
+              <text
+                x={Math.min(SVG_W - 110, lonToX(compareLon) + 12)}
+                y={Math.max(16, latToY(compareLat) + 4)}
+                fontSize="10"
+                fontWeight="700"
+                fill="#78350F"
+                stroke="#FFFFFF"
+                strokeWidth={2.5}
+                paintOrder="stroke"
+                className="font-sans"
+              >
+                B: {compareLabel}
+              </text>
+            </g>
+          )}
+
+          {/* Primary Region A Target Crosshair */}
+          <g pointerEvents="none">
+            <circle
+              cx={lonToX(primaryLon)}
+              cy={latToY(primaryLat)}
+              r={11}
+              fill="rgba(37, 99, 235, 0.16)"
+              stroke="#1D4ED8"
+              strokeWidth={1.7}
+            />
+            <circle cx={lonToX(primaryLon)} cy={latToY(primaryLat)} r={4} fill="#1D4ED8" />
+            <text
+              x={Math.min(SVG_W - 120, lonToX(primaryLon) + 13)}
+              y={Math.max(16, latToY(primaryLat) - 6)}
+              fontSize="10.5"
+              fontWeight="700"
+              fill="#1E3A8A"
+              stroke="#FFFFFF"
+              strokeWidth={2.5}
+              paintOrder="stroke"
+              className="font-sans"
+            >
+              {compareMode ? `A: ${primaryLabel}` : primaryLabel}
+            </text>
+          </g>
+        </svg>
+
+        {hoveredPreset && (
+          <div className="pointer-events-none z-20 absolute bottom-3 left-3 bg-white/95 border border-slate-200 rounded-md px-3 py-2 shadow-sm max-w-xs">
+            <div className="text-xs font-semibold text-slate-900">{hoveredPreset.name}</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
+              {hoveredPreset.biomeLabel} · {formatCoord(hoveredPreset.lat, hoveredPreset.lon)}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Diverging Spatial Heatmap Legend Footer */}
+      {heatmapEnabled && heatmapData && (
+        <div className="px-4 py-2.5 border-t border-slate-200 bg-white flex flex-wrap items-center justify-between gap-4 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-slate-700">
+            <span className="font-semibold text-slate-900">
+              {variableName} Anomaly Deviation ({heatmapData.startYear}–{heatmapData.endYear})
+            </span>
+            <span className="text-slate-400">·</span>
+            <span className="text-slate-500">
+              Global Model Mean Change:{' '}
+              <span className="font-mono tabular-nums font-semibold text-slate-800">
+                {sign(heatmapData.globalModelMean)}
+                {heatmapData.globalModelMean.toFixed(decimals)} {unit}
+              </span>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2.5 font-mono tabular-nums text-[11px]">
+            <span className="text-blue-700 font-medium">
+              −{maxAbsDeviation.toFixed(decimals)} {unit}
+            </span>
+            <div
+              className="w-40 h-2.5 rounded-xs border border-slate-200"
+              style={{
+                background:
+                  'linear-gradient(to right, #1D4ED8 0%, #38BDF8 25%, #F8FAFC 50%, #F59E0B 75%, #B91C1C 100%)',
+              }}
+              aria-label="Diverging color scale from negative anomaly through global model mean to positive anomaly"
+            />
+            <span className="text-rose-700 font-medium">
+              +{maxAbsDeviation.toFixed(decimals)} {unit}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
