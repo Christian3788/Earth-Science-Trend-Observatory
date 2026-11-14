@@ -344,3 +344,175 @@ export default function App() {
       {/* 3-Zone Top Bar Contract */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xs border-b border-slate-200">
         <div className="max-w-[1440px] mx-auto px-6 h-14 flex items-center justify-between gap-8">
+          <a
+            href="#observatory"
+            className="text-lg font-display font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0"
+          >
+            TerraTrend
+          </a>
+
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+            <a
+              href="#observatory"
+              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+            >
+              Observatory
+            </a>
+            <button
+              type="button"
+              onClick={() => setDetectiveOpen(true)}
+              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              Data Detective
+            </button>
+            <a
+              href="#demonstrations"
+              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+            >
+              Demonstrations
+            </a>
+            <a
+              href="#methodology"
+              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+            >
+              Methodology
+            </a>
+            <a
+              href="#resources"
+              className="hover:text-slate-900 transition-colors whitespace-nowrap shrink-0"
+            >
+              Resources
+            </a>
+          </nav>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => startDemo(DEMONSTRATION_CASES[0])}
+              className="px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              Run Guided Demo
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Observatory Workspace */}
+      <main id="observatory" className="flex-1 max-w-[1440px] w-full mx-auto px-6 py-6">
+        {/* Compact Workspace Title & Action Strip */}
+        <div className="flex flex-wrap items-end justify-between gap-4 mb-5">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight text-balance">
+              Earth Science Trend Observatory
+            </h1>
+            <p className="text-sm text-slate-600 mt-1 max-w-2xl">
+              Select a NASA satellite or global model variable, pick any region on Earth, remove seasonal cycles, and test whether the long-term trend is statistically significant.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setDetectiveOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-800 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Compass className="w-3.5 h-3.5 text-blue-600" />
+              <span>Data Detective Inquiry</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadCSV}
+              disabled={!primarySummary}
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-800 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-40 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-600" />
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Active Guided Demonstration Walkthrough Banner */}
+        {activeDemo && currentDemoStep && (
+          <div className="mb-5 bg-white border border-blue-200 rounded-lg p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div>
+                <div className="text-xs text-blue-700 font-medium">
+                  Guided Case Study · Step {demoStepIndex + 1} of {activeDemo.steps.length}
+                </div>
+                <h2 className="text-sm font-semibold text-slate-900 mt-0.5">
+                  {activeDemo.title}: {currentDemoStep.title}
+                </h2>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const prev = Math.max(0, demoStepIndex - 1);
+                    setDemoStepIndex(prev);
+                    applyDemoStep(activeDemo, prev);
+                  }}
+                  disabled={demoStepIndex === 0}
+                  className="p-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  aria-label="Previous step"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDemoPlaying((p) => !p)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded border border-slate-200 text-slate-800 hover:bg-slate-50 cursor-pointer whitespace-nowrap shrink-0"
+                >
+                  {demoPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                  <span>{demoPlaying ? 'Pause' : 'Auto-Play'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = Math.min(activeDemo.steps.length - 1, demoStepIndex + 1);
+                    setDemoStepIndex(next);
+                    applyDemoStep(activeDemo, next);
+                  }}
+                  disabled={demoStepIndex === activeDemo.steps.length - 1}
+                  className="p-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                  aria-label="Next step"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveDemo(null);
+                    setDemoPlaying(false);
+                  }}
+                  className="p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 ml-1 cursor-pointer"
+                  aria-label="Exit demonstration"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-slate-700 mt-3 leading-relaxed">{currentDemoStep.narrative}</p>
+          </div>
+        )}
+
+        {/* Asymmetric Split Console */}
+        <div className="flex flex-col lg:flex-row gap-5 items-start">
+          {/* Left Control & Parameter Column */}
+          <aside className="w-full lg:w-[340px] shrink-0 space-y-4">
+            {/* 1. Region & Comparison Controls */}
+            <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3.5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-semibold text-slate-900">1. Region of Interest</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !compareMode;
+                    setCompareMode(next);
+                    if (!next) setActiveSelectionTarget('primary');
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    compareMode
+                      ? 'bg-amber-50 text-amber-800 border-amber-300'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
