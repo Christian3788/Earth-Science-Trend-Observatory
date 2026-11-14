@@ -704,3 +704,104 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
         const currentDist = camera.position.length();
         const targetDist = _camTargetPos.length();
         const nextDist = THREE.MathUtils.damp(currentDist, targetDist, 5.5, delta);
+        camera.position.x = THREE.MathUtils.damp(camera.position.x, _camTargetPos.x, 5.5, delta);
+        camera.position.y = THREE.MathUtils.damp(camera.position.y, _camTargetPos.y, 5.5, delta);
+        camera.position.z = THREE.MathUtils.damp(camera.position.z, _camTargetPos.z, 5.5, delta);
+        camera.position.normalize().multiplyScalar(nextDist);
+
+        if (camera.position.distanceTo(_camTargetPos) < 0.04) {
+          cameraFocusActive = false;
+        }
+      }
+
+      controls.autoRotate = !isSoftwareGl && autoRotateRef.current && !cameraFocusActive;
+      controls.autoRotateSpeed = 0.65;
+      controls.update();
+
+      renderer.render(scene, camera);
+
+      if (isSoftwareGl) {
+        afterDraw(tick);
+      } else {
+        frameId = requestAnimationFrame(tick);
+      }
+    }
+
+    tick();
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(frameId);
+      clearTimeout(frameId);
+      resizeObserver.disconnect();
+      renderer.domElement.removeEventListener('pointerdown', onPointerDown);
+      renderer.domElement.removeEventListener('pointermove', onPointerMove);
+      renderer.domElement.removeEventListener('pointerup', onPointerUp);
+      renderer.domElement.removeEventListener('webglcontextlost', handleContextLost);
+      renderer.domElement.removeEventListener('webglcontextrestored', handleContextRestored);
+      controls.dispose();
+
+      scene.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh || (obj as THREE.Points).isPoints) {
+          const mesh = obj as THREE.Mesh;
+          mesh.geometry?.dispose();
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach((m) => m.dispose());
+          } else {
+            mesh.material?.dispose();
+          }
+        }
+      });
+
+      arcMat.dispose();
+      albedoMap.dispose();
+      roughnessMap.dispose();
+      envTex.dispose();
+      renderer.forceContextLoss();
+      renderer.dispose();
+    };
+  }, []);
+
+  // Sync markers and smoothly orient camera when coordinates change
+  useEffect(() => {
+    sceneSyncRef.current.updateMarkers?.();
+    const targetLat = compareMode && activeSelectionTarget === 'compare' ? compareLat : primaryLat;
+    const targetLon = compareMode && activeSelectionTarget === 'compare' ? compareLon : primaryLon;
+    sceneSyncRef.current.focusOnLatLon?.(targetLat, targetLon);
+  }, [
+    primaryLat,
+    primaryLon,
+    compareMode,
+    compareLat,
+    compareLon,
+    activePresetId,
+    comparePresetId,
+    activeSelectionTarget,
+  ]);
+
+  return (
+    <div className="bg-slate-950 border border-slate-200 rounded-lg overflow-hidden">
+      {/* Compact Header Strip */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-white border-b border-slate-200">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold text-slate-900 tracking-tight">
+            Interactive 3D Earth Observatory
+          </span>
+          <span className="text-xs text-slate-500 hidden sm:inline">
+            Drag to orbit · Scroll to zoom · Click anywhere on Earth to sample
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {compareMode && (
+            <div className="flex items-center gap-1 p-0.5 bg-slate-200/70 rounded-md">
+              <button
+                type="button"
+                onClick={() => onSelectTargetChange('primary')}
+                className={`px-2.5 py-1 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  activeSelectionTarget === 'primary'
+                    ? 'bg-white text-blue-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Set Region A
