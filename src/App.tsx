@@ -689,3 +689,176 @@ export default function App() {
                   >
                     Annual
                   </button>
+                  <button
+                    type="button"
+                    disabled={!selectedVariable.supportsDaily}
+                    onClick={() => setResolution('daily')}
+                    title={
+                      selectedVariable.supportsDaily
+                        ? 'Inspect high-frequency daily observations (last 5 years of window)'
+                        : 'Daily resolution available for NASA POWER variables'
+                    }
+                    className={`py-1.5 text-xs font-medium rounded transition-colors disabled:opacity-40 cursor-pointer ${
+                      resolution === 'daily'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Daily
+                  </button>
+                </div>
+              </div>
+
+              {/* Deseasonalize Toggle */}
+              <div className="flex items-start justify-between gap-3 pt-1">
+                <div>
+                  <label htmlFor="deseasonalize-toggle" className="text-xs font-medium text-slate-800 block">
+                    Remove Seasonal Cycle
+                  </label>
+                  <span className="text-[11px] text-slate-500">
+                    Subtract monthly climatology to isolate long-term anomalies
+                  </span>
+                </div>
+                <input
+                  id="deseasonalize-toggle"
+                  type="checkbox"
+                  checked={deseasonalize}
+                  disabled={resolution === 'annual'}
+                  onChange={(e) => setDeseasonalize(e.target.checked)}
+                  className="mt-1 h-4 w-4 accent-blue-600 rounded border-slate-300 cursor-pointer"
+                />
+              </div>
+
+              {/* Year Range Sliders */}
+              <div className="space-y-2.5 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-600">Observation Span</span>
+                  <span className="font-mono tabular-nums font-semibold text-slate-900">
+                    {startYear} – {endYear} ({endYear - startYear + 1} yrs)
+                  </span>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-[11px] text-slate-500 mb-0.5">
+                    <span>Start Year</span>
+                    <span className="font-mono tabular-nums">{startYear}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1981}
+                    max={endYear - 3}
+                    value={startYear}
+                    onChange={(e) => setStartYear(Number(e.target.value))}
+                    className="w-full accent-blue-600 cursor-pointer"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-[11px] text-slate-500 mb-0.5">
+                    <span>End Year</span>
+                    <span className="font-mono tabular-nums">{endYear}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={startYear + 3}
+                    max={2024}
+                    value={endYear}
+                    onChange={(e) => setEndYear(Number(e.target.value))}
+                    className="w-full accent-blue-600 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Visualization & Statistical Stage */}
+          <div className="flex-1 min-w-0 space-y-4">
+            {/* Spatial Projection Switcher */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-1 p-1 bg-slate-200/70 rounded-md">
+                <button
+                  type="button"
+                  onClick={() => setSpatialView('3d')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    spatialView === '3d'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5 text-blue-600" />
+                  <span>3D Orbital Globe</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSpatialView('2d')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    spatialView === '2d'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <MapIcon className="w-3.5 h-3.5 text-slate-600" />
+                  <span>2D Projection Map</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1 p-1 bg-slate-200/70 rounded-md">
+                <button
+                  type="button"
+                  onClick={() => setChartView('2d')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    chartView === '2d'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Trend & CI Chart</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartView('3d')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    chartView === '3d'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Box className="w-3.5 h-3.5 text-slate-600" />
+                  <span>3D Seasonal Surface</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Geocoding Location Search Bar */}
+            <LocationSearchBar
+              onSelectLocation={(loc) => {
+                setPrimaryLat(loc.lat);
+                setPrimaryLon(loc.lon);
+                setPrimaryLabel(loc.name);
+                setActivePresetId(null);
+                setActiveSelectionTarget('primary');
+              }}
+            />
+
+            {/* Interactive 3D Globe or 2D Projection Map */}
+            {spatialView === '3d' ? (
+              <EarthGlobe3D
+                primaryLat={primaryLat}
+                primaryLon={primaryLon}
+                primaryLabel={primaryLabel}
+                compareMode={compareMode}
+                compareLat={compareLat}
+                compareLon={compareLon}
+                compareLabel={compareLabel}
+                activeSelectionTarget={activeSelectionTarget}
+                onSelectTargetChange={setActiveSelectionTarget}
+                onSelectCoordinate={handleMapSelect}
+                presets={PRESET_REGIONS}
+                activePresetId={activePresetId}
+                comparePresetId={comparePresetId}
+                slopeDirection={primarySummary?.verdictDirection}
+              />
+            ) : (
+              <WorldMapSelector
+                primaryLat={primaryLat}
