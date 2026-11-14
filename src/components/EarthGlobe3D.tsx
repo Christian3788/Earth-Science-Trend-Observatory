@@ -301,3 +301,104 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
+    const handleContextLost = (e: Event) => {
+      e.preventDefault();
+      setWebglError('3D WebGL context was interrupted. Switch to 2D Map or reload.');
+    };
+    const handleContextRestored = () => {
+      setWebglError(null);
+    };
+    renderer.domElement.addEventListener('webglcontextlost', handleContextLost);
+    renderer.domElement.addEventListener('webglcontextrestored', handleContextRestored);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b1220);
+
+    // Mandatory studio environment reflection map
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    const envTex = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = envTex;
+    pmremGenerator.dispose();
+
+    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+    // Start looking toward initial primary coordinate
+    const initTarget = latLonToVec3(primaryLat, primaryLon, 5.15);
+    camera.position.copy(initTarget);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enablePan = false;
+    controls.minDistance = 3.1;
+    controls.maxDistance = 8.5;
+    controls.enableDamping = !isSoftwareGl;
+    controls.dampingFactor = 0.06;
+
+    // Warm Sunlight Key + Cool Hemisphere Fill + Subtle Rim Backlight
+    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x1e293b, 0.95);
+    scene.add(hemiLight);
+
+    const keyLight = new THREE.DirectionalLight(0xfff7ed, 2.35);
+    keyLight.position.set(6, 4.5, 5);
+    scene.add(keyLight);
+
+    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.85);
+    rimLight.position.set(-6, -2, -5);
+    scene.add(rimLight);
+
+    // Subtle 3D Starfield (Points)
+    const starCount = 650;
+    const starPositions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      const r = 18 + Math.random() * 14;
+      const theta = Math.acos(2 * Math.random() - 1);
+      const phi = Math.random() * Math.PI * 2;
+      starPositions[i * 3] = r * Math.sin(theta) * Math.cos(phi);
+      starPositions[i * 3 + 1] = r * Math.cos(theta);
+      starPositions[i * 3 + 2] = r * Math.sin(theta) * Math.sin(phi);
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starMat = new THREE.PointsMaterial({
+      color: 0xcbd5e1,
+      size: 0.065,
+      transparent: true,
+      opacity: 0.72,
+      sizeAttenuation: true,
+    });
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
+
+    // Earth Globe Group
+    const globeGroup = new THREE.Group();
+    scene.add(globeGroup);
+
+    const maxAniso = renderer.capabilities.getMaxAnisotropy();
+    const { albedoMap, roughnessMap } = createEarthTextures(maxAniso);
+
+    const earthGeo = new THREE.SphereGeometry(EARTH_RADIUS, 72, 48);
+    const earthMat = new THREE.MeshStandardMaterial({
+      map: albedoMap,
+      roughnessMap,
+      roughness: 1.0,
+      metalness: 0.06,
+    });
+    const earthMesh = new THREE.Mesh(earthGeo, earthMat);
+    globeGroup.add(earthMesh);
+
+    // Atmospheric Fresnel Rim Glow Shell
+    const atmoGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.028, 64, 48);
+    const atmoMat = new THREE.ShaderMaterial({
+      uniforms: {
+        glowColor: { value: new THREE.Color(0x38bdf8) },
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vViewDir;
+        void main() {
+          vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+          vNormal = normalize(normalMatrix * normal);
+          vViewDir = normalize(-mvPos.xyz);
+          gl_Position = projectionMatrix * mvPos;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 glowColor;
