@@ -459,3 +459,92 @@ function greatCircleRad(lat1: number, lon1: number, lat2: number, lon2: number):
   return 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+app.get('/api/spatial-heatmap', async (req, res) => {
+  try {
+    const variable = String(req.query.variable || 'TS');
+    const startYear = Math.max(1981, Math.min(2020, Number(req.query.startYear) || 1985));
+    const endYear = Math.max(startYear + 3, Math.min(2024, Number(req.query.endYear) || 2024));
+
+    const cacheKey = `heatmap:${variable}:${startYear}:${endYear}`;
+    const cached = responseCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      res.json(cached.payload);
+      return;
+    }
+
+    const rows = 18; // -85 to +85 in 10-deg steps (top row = +85)
+    const cols = 36; // -175 to +175 in 10-deg steps
+
+    // Optionally sample live NASA POWER anchors for live parameters (fast 4.5s timeout)
+    const liveAnchors: AnchorPoint[] = [];
+    if (NASA_POWER_PARAMS.has(variable)) {
+      const nasaCfg = getNasaPowerConfig(variable);
+      const effectiveAnchorStart = Math.max(nasaCfg.minYear, startYear);
+      if (endYear > effectiveAnchorStart) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 4500);
+
+        const results = await Promise.allSettled(
+          GLOBAL_ANCHORS.map(async (pt) => {
+            const url = `https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=${encodeURIComponent(
+              nasaCfg.param,
+            )}&community=RE&longitude=${pt.lon}&latitude=${pt.lat}&start=${effectiveAnchorStart}&end=${endYear}&format=JSON`;
+            const resp = await fetch(url, { signal: controller.signal });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const json = (await resp.json()) as {
+              properties?: { parameter?: Record<string, Record<string, number>> };
+            };
+            const paramMap = json?.properties?.parameter;
+            const raw = paramMap?.[nasaCfg.param] ?? (paramMap ? Object.values(paramMap)[0] : undefined);
+            if (!raw) throw new Error('Missing parameter');
+            const pts: TimeSeriesPoint[] = [];
+            for (const [k, v] of Object.entries(raw)) {
+              if (v === -999 || v === null || Number.isNaN(v) || k.length !== 6) continue;
+              const y = Number(k.slice(0, 4));
+              const m = Number(k.slice(4, 6));
+              if (m < 1 || m > 12) continue;
+              pts.push({
+                date: `${y}-${String(m).padStart(2, '0')}`,
+                year: y,
+                month: m,
+                decimalYear: y + (m - 0.5) / 12,
+                value: v,
+              });
+            }
+            const anom = computePeriodAnomaly(pts, effectiveAnchorStart, endYear);
+            if (anom === null) throw new Error('Insufficient points');
+            return { lat: pt.lat, lon: pt.lon, anomaly: anom };
+          }),
+        );
+        clearTimeout(timer);
+
+        for (const r of results) {
+          if (r.status === 'fulfilled') {
+            liveAnchors.push(r.value);
+          }
+        }
+      }
+    }
+
+    const useLiveBlend = liveAnchors.length >= 6;
+    const rawGrid: number[][] = [];
+    let weightedSum = 0;
+    let weightTotal = 0;
+
+    for (let r = 0; r < rows; r++) {
+      const lat = 85 - r * 10;
+      const cosLat = Math.max(0.05, Math.cos((lat * Math.PI) / 180));
+      const rowVals: number[] = [];
+
+      for (let c = 0; c < cols; c++) {
+        const lon = -175 + c * 10;
+        const model = generateCalibratedMissionSeries(variable, lat, lon, startYear, endYear);
+        const modelAnom = computePeriodAnomaly(model.points, startYear, endYear) ?? 0;
+
+        let cellAnomaly = modelAnom;
+
+        if (useLiveBlend) {
+          // Gaussian-kernel IDW over live NASA POWER anchors blended smoothly with geophysical model
+          let wSum = 0;
+          let vSum = 0;
+          let maxInfluence = 0;
