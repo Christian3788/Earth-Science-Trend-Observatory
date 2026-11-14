@@ -25,7 +25,7 @@ commit_for() {
 }
 
 # Part 1: Project Setup, Build Configuration & Entry Point
-commit_for "mchere" "chemeresniriam@gmail.com" \
+commit_for "mchere" "chemeremiriam@gmail.com" \
   "chore: configure Vite, TypeScript, Tailwind, and application entry" \
   .gitignore .env.example package.json bun.lock tsconfig.json vite.config.ts metadata.json index.html src/index.css src/main.tsx
 
@@ -35,7 +35,7 @@ commit_for "hellenonyango" "hellenonyango340@gmail.com" \
   server.ts
 
 # Part 3: Earth Science Variable Catalog & Statistical Significance Engine
-commit_for "asoyovick" "oumaasoyo@gmail.com" \
+commit_for "asoyovick" "oumaasoyoh@gmail.com" \
   "feat: implement Earth variable catalog, OLS t-test, Mann-Kendall, and Sen slope engine" \
   src/data/earthCatalog.ts src/utils/statistics.ts
 
@@ -45,7 +45,7 @@ commit_for "altradits" "altradits@gmail.com" \
   src/utils/earthTextures.ts src/components/EarthGlobe3D.tsx
 
 # Part 5: 2D Spatial Anomaly Map, Location Search & 2D/3D Time-Series Charts
-commit_for "jackomosh" "jackosmosh6@gmail.com" \
+commit_for "jackomosh" "jackomosh6@gmail.com" \
   "feat: add 2D spatial anomaly heatmap map, location search, and 2D/3D trend charts" \
   src/components/WorldMapSelector.tsx src/components/LocationSearchBar.tsx src/components/TimeSeriesChart.tsx src/components/TimeSeries3DSurface.tsx
 

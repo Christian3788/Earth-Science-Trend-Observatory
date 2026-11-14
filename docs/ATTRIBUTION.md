@@ -45,7 +45,7 @@ feat: add spatial anomaly heatmap overlay
 Implements grid sampling and client-side canvas rendering for anomaly layers.
 
 Co-authored-by: Hellen Onyango <hellenonyango340@gmail.com>
-Co-authored-by: Jack Omosh <jackosmosh6@gmail.com>
+Co-authored-by: Jack Omosh <jackomosh6@gmail.com>
 ```
 
 ## Optional: commit message template
@@ -64,11 +64,11 @@ Use these identities **only when you are that person** committing from your own 
 
 | Contributor      | Suggested email                  | Primary areas |
 |------------------|----------------------------------|---------------|
-| mchere           | chemeresniriam@gmail.com         | Project setup, build/config, entry point |
+| mchere           | chemeremiriam@gmail.com          | Project setup, build/config, entry point |
 | hellenonyango    | hellenonyango340@gmail.com      | Server, NASA POWER proxy, spatial/geocoding APIs |
-| asoyovick        | oumaasoyo@gmail.com              | Earth variable catalog, statistics engine |
+| asoyovick        | oumaasoyoh@gmail.com             | Earth variable catalog, statistics engine |
 | altradits        | altradits@gmail.com              | 3D globe, Earth textures |
-| jackomosh        | jackosmosh6@gmail.com            | 2D map selector, search, 2D/3D charts |
+| jackomosh        | jackomosh6@gmail.com             | 2D map selector, search, 2D/3D charts |
 | Christian3788    | christianamos67@gmail.com       | App/workspace assembly, panels, docs/resources |
 
 If your preferred name/email differs from the above, use your own accurate details.
