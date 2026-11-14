@@ -106,3 +106,56 @@ export function createEarthTextures(maxAnisotropy: number): {
   const drawCountries = (targetCtx: CanvasRenderingContext2D, fill: string | CanvasGradient, stroke: string) => {
     targetCtx.fillStyle = fill;
     targetCtx.strokeStyle = stroke;
+    targetCtx.lineWidth = 1.1;
+
+    for (const feat of geo.features) {
+      const geom = feat.geometry;
+      if (!geom) continue;
+      targetCtx.beginPath();
+      if (geom.type === 'Polygon') {
+        for (const ring of geom.coordinates) {
+          traceRing(targetCtx, ring);
+        }
+      } else if (geom.type === 'MultiPolygon') {
+        for (const poly of geom.coordinates) {
+          for (const ring of poly) {
+            traceRing(targetCtx, ring);
+          }
+        }
+      }
+      targetCtx.fill();
+      targetCtx.stroke();
+    }
+  };
+
+  drawCountries(ctx, landGrad, 'rgba(15, 23, 42, 0.35)');
+  drawCountries(rCtx, '#d1d1d1', '#d1d1d1'); // ~0.82 matte roughness for continents
+
+  // Subtle continental border highlight in color map
+  ctx.strokeStyle = 'rgba(248, 250, 252, 0.28)';
+  ctx.lineWidth = 0.8;
+  for (const feat of geo.features) {
+    const geom = feat.geometry;
+    if (!geom) continue;
+    ctx.beginPath();
+    if (geom.type === 'Polygon') {
+      for (const ring of geom.coordinates) traceRing(ctx, ring);
+    } else if (geom.type === 'MultiPolygon') {
+      for (const poly of geom.coordinates) {
+        for (const ring of poly) traceRing(ctx, ring);
+      }
+    }
+    ctx.stroke();
+  }
+
+  const albedoMap = new THREE.CanvasTexture(colorCanvas);
+  albedoMap.colorSpace = THREE.SRGBColorSpace;
+  albedoMap.anisotropy = maxAnisotropy;
+  albedoMap.needsUpdate = true;
+
+  const roughnessMap = new THREE.CanvasTexture(roughCanvas);
+  roughnessMap.anisotropy = maxAnisotropy;
+  roughnessMap.needsUpdate = true;
+
+  return { albedoMap, roughnessMap };
+}
