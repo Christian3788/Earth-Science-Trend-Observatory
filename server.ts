@@ -745,6 +745,224 @@ app.get('/api/geocode', async (req, res) => {
   }
 });
 
+interface BinaryCacheEntry {
+  timestamp: number;
+  contentType: string;
+  data: Buffer;
+}
+
+const IMAGE_CACHE_TTL_MS = 1000 * 60 * 60 * 12;
+const MAX_IMAGE_CACHE_ENTRIES = 160;
+const imageCache = new Map<string, BinaryCacheEntry>();
+
+function setImageCache(key: string, entry: BinaryCacheEntry) {
+  if (imageCache.size >= MAX_IMAGE_CACHE_ENTRIES) {
+    const oldestKey = imageCache.keys().next().value;
+    if (oldestKey) imageCache.delete(oldestKey);
+  }
+  imageCache.set(key, entry);
+}
+
+async function fetchGibsImage(url: string, timeoutMs = 12000): Promise<BinaryCacheEntry> {
+  const cached = imageCache.get(url);
+  if (cached && Date.now() - cached.timestamp < IMAGE_CACHE_TTL_MS) {
+    return cached;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const resp = await fetch(url, { signal: controller.signal });
+  clearTimeout(timer);
+
+  if (!resp.ok) {
+    throw new Error(`NASA GIBS HTTP ${resp.status}`);
+  }
+
+  const contentType = resp.headers.get('content-type') || 'image/jpeg';
+  if (!contentType.startsWith('image/')) {
+    throw new Error(`NASA GIBS returned non-image content-type: ${contentType}`);
+  }
+
+  const data = Buffer.from(await resp.arrayBuffer());
+  if (data.length < 200) {
+    throw new Error('NASA GIBS returned empty image payload');
+  }
+
+  const entry: BinaryCacheEntry = { timestamp: Date.now(), contentType, data };
+  setImageCache(url, entry);
+  return entry;
+}
+
+function getGibsGlobalLayerConfig(variable: string): { layer: string; minYear: number } {
+  switch (variable) {
+    case 'T2M':
+      return { layer: 'MERRA2_2m_Air_Temperature_Monthly', minYear: 1981 };
+    case 'TS':
+      return { layer: 'MERRA2_Surface_Skin_Temperature_Monthly', minYear: 1981 };
+    case 'ALLSKY_SFC_SW_DWN':
+      return { layer: 'MERRA2_Incident_Shortwave_Over_Land_Monthly', minYear: 1984 };
+    case 'SRF_ALB':
+      return { layer: 'MERRA2_ISCCP_Cloud_Albedo_Monthly', minYear: 1984 };
+    case 'CLOUD_AMT':
+      return { layer: 'MODIS_Terra_Cloud_Fraction_Day', minYear: 2001 };
+    case 'PRECTOTCORR':
+      return { layer: 'IMERG_Precipitation_Rate', minYear: 2001 };
+    case 'GWETPROF':
+      return { layer: 'SMAP_L4_Analyzed_Root_Zone_Soil_Moisture', minYear: 2016 };
+    case 'MODIS_NDVI':
+      return { layer: 'MODIS_Terra_L3_NDVI_Monthly', minYear: 2001 };
+    case 'OMI_O3':
+      return { layer: 'OMI_Ozone_TOMS_Total_Column', minYear: 2005 };
+    case 'SEAWIFS_CHL':
+      return { layer: 'MODIS_Aqua_L2_Chlorophyll_A', minYear: 2003 };
+    default:
+      return { layer: 'MERRA2_Surface_Skin_Temperature_Monthly', minYear: 1985 };
+  }
+}
+
+app.get('/api/satellite/earth-texture', async (req, res) => {
+  try {
+    const kind = String(req.query.kind || 'shaded');
+    let layer = 'BlueMarble_ShadedRelief_Bathymetry';
+    let format = 'image/jpeg';
+
+    if (kind === 'bluemarble') {
+      layer = 'BlueMarble_NextGeneration';
+    } else if (kind === 'relief') {
+      layer = 'ASTER_GDEM_Greyscale_Shaded_Relief';
+    } else if (kind === 'watermask') {
+      layer = 'MODIS_Water_Mask';
+      format = 'image/png';
+    }
+
+    const url =
+      `https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi` +
+      `?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1` +
+      `&LAYERS=${encodeURIComponent(layer)}&STYLES=` +
+      `&FORMAT=${encodeURIComponent(format)}&SRS=EPSG:4326` +
+      `&BBOX=-180,-90,180,90&WIDTH=2048&HEIGHT=1024`;
+
+    const img = await fetchGibsImage(url, 15000);
+    res.setHeader('Content-Type', img.contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(img.data);
+  } catch (error) {
+    console.error('Error in /api/satellite/earth-texture:', error);
+    res.status(502).json({ error: 'Unable to fetch NASA Blue Marble texture.' });
+  }
+});
+
+app.get('/api/satellite/global-layer', async (req, res) => {
+  try {
+    const variable = String(req.query.variable || 'TS');
+    const reqYear = Math.max(1981, Math.min(2024, Number(req.query.year) || 2024));
+    const reqMonth = Math.max(1, Math.min(12, Number(req.query.month) || 7));
+
+    const cfg = getGibsGlobalLayerConfig(variable);
+    const effectiveYear = Math.max(cfg.minYear, reqYear);
+    const day = cfg.layer === 'IMERG_Precipitation_Rate' || cfg.layer === 'MODIS_Terra_Cloud_Fraction_Day' ? '15' : '01';
+    const timeStr = `${effectiveYear}-${String(reqMonth).padStart(2, '0')}-${day}`;
+
+    const url =
+      `https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi` +
+      `?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1` +
+      `&LAYERS=${encodeURIComponent(cfg.layer)}&STYLES=` +
+      `&FORMAT=image/png&TRANSPARENT=true&SRS=EPSG:4326` +
+      `&BBOX=-180,-90,180,90&WIDTH=1024&HEIGHT=512&TIME=${timeStr}`;
+
+    const img = await fetchGibsImage(url, 14000);
+    res.setHeader('Content-Type', img.contentType);
+    res.setHeader('Cache-Control', 'public, max-age=43200');
+    res.send(img.data);
+  } catch (error) {
+    console.error('Error in /api/satellite/global-layer:', error);
+    res.status(502).json({ error: 'Unable to fetch NASA GIBS global satellite layer.' });
+  }
+});
+
+app.get('/api/satellite/regional-snapshot', async (req, res) => {
+  try {
+    const lat = Number(req.query.lat);
+    const lon = Number(req.query.lon);
+    if (Number.isNaN(lat) || Number.isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      res.status(400).json({ error: 'Invalid coordinates.' });
+      return;
+    }
+
+    const layerKind = String(req.query.layer || 'truecolor');
+    const reqYear = Math.max(1985, Math.min(2024, Number(req.query.year) || 2024));
+    const reqMonth = Math.max(1, Math.min(12, Number(req.query.month) || 7));
+    const span = Math.max(0.5, Math.min(14, Number(req.query.span) || 2.5));
+
+    const width = 800;
+    const height = 520;
+    const aspect = width / height;
+    const cosLat = Math.max(0.32, Math.cos((lat * Math.PI) / 180));
+    const halfLat = span;
+    const halfLon = Math.min(30, (span * aspect) / cosLat);
+
+    let minLat = Math.max(-89.5, lat - halfLat);
+    let maxLat = Math.min(89.5, lat + halfLat);
+    if (maxLat - minLat < 0.8) {
+      minLat = Math.max(-89.5, lat - 0.5);
+      maxLat = Math.min(89.5, lat + 0.5);
+    }
+
+    let minLon = Math.max(-179.9, lon - halfLon);
+    let maxLon = Math.min(179.9, lon + halfLon);
+    if (maxLon - minLon < 1.0) {
+      minLon = Math.max(-179.9, lon - 0.8);
+      maxLon = Math.min(179.9, lon + 0.8);
+    }
+
+    let layers = 'BlueMarble_NextGeneration,MODIS_Terra_CorrectedReflectance_TrueColor';
+    let effectiveYear = Math.max(2000, reqYear);
+    let day = '15';
+
+    if (layerKind === 'viirs') {
+      layers = 'BlueMarble_NextGeneration,VIIRS_SNPP_CorrectedReflectance_TrueColor';
+      effectiveYear = Math.max(2016, reqYear);
+    } else if (layerKind === 'lst') {
+      layers = 'BlueMarble_ShadedRelief_Bathymetry,MODIS_Terra_L3_Land_Surface_Temp_Monthly_Day';
+      effectiveYear = Math.max(2001, reqYear);
+      day = '01';
+    } else if (layerKind === 'ndvi') {
+      layers = 'BlueMarble_ShadedRelief_Bathymetry,MODIS_Terra_L3_NDVI_Monthly';
+      effectiveYear = Math.max(2001, reqYear);
+      day = '01';
+    } else if (layerKind === 'seaice') {
+      if (reqYear >= 2013) {
+        layers = 'BlueMarble_ShadedRelief_Bathymetry,AMSRU2_Sea_Ice_Concentration_12km';
+        effectiveYear = reqYear;
+      } else {
+        layers = 'BlueMarble_NextGeneration,MODIS_Terra_CorrectedReflectance_TrueColor';
+        effectiveYear = Math.max(2000, reqYear);
+      }
+    }
+
+    // MODIS Terra began science operations in late Feb 2000
+    const effectiveMonth = effectiveYear === 2000 && reqMonth < 3 ? 3 : reqMonth;
+    const timeStr = `${effectiveYear}-${String(effectiveMonth).padStart(2, '0')}-${day}`;
+    const bbox = `${minLon.toFixed(3)},${minLat.toFixed(3)},${maxLon.toFixed(3)},${maxLat.toFixed(3)}`;
+
+    const url =
+      `https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi` +
+      `?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1` +
+      `&LAYERS=${encodeURIComponent(layers)}&STYLES=` +
+      `&FORMAT=image/jpeg&SRS=EPSG:4326` +
+      `&BBOX=${bbox}&WIDTH=${width}&HEIGHT=${height}&TIME=${timeStr}`;
+
+    const img = await fetchGibsImage(url, 14000);
+    res.setHeader('Content-Type', img.contentType);
+    res.setHeader('Cache-Control', 'public, max-age=43200');
+    res.setHeader('X-Satellite-Time', timeStr);
+    res.send(img.data);
+  } catch (error) {
+    console.error('Error in /api/satellite/regional-snapshot:', error);
+    res.status(502).json({ error: 'Unable to fetch regional NASA satellite imagery.' });
+  }
+});
+
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');

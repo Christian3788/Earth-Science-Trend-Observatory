@@ -30,6 +30,7 @@ import {
 } from './utils/statistics';
 import { EarthGlobe3D } from './components/EarthGlobe3D';
 import { WorldMapSelector, type SpatialHeatmapData } from './components/WorldMapSelector';
+import { RegionalImageryCompare } from './components/RegionalImageryCompare';
 import { LocationSearchBar } from './components/LocationSearchBar';
 import { TimeSeriesChart } from './components/TimeSeriesChart';
 import { TimeSeries3DSurface } from './components/TimeSeries3DSurface';
@@ -858,6 +859,9 @@ export default function App() {
                 activePresetId={activePresetId}
                 comparePresetId={comparePresetId}
                 slopeDirection={primarySummary?.verdictDirection}
+                variableId={variableId}
+                variableName={selectedVariable.name}
+                endYear={endYear}
               />
             ) : (
               <WorldMapSelector
@@ -880,11 +884,27 @@ export default function App() {
                 onToggleHeatmap={() => setHeatmapEnabled((v) => !v)}
                 heatmapOpacity={heatmapOpacity}
                 onChangeHeatmapOpacity={setHeatmapOpacity}
+                variableId={variableId}
                 variableName={selectedVariable.name}
+                endYear={endYear}
                 unit={selectedVariable.unit}
                 decimals={selectedVariable.decimals}
               />
             )}
+
+            {/* Real NASA Satellite Change Imagery (Before vs After & Region A vs B) */}
+            <RegionalImageryCompare
+              primaryLat={primaryLat}
+              primaryLon={primaryLon}
+              primaryLabel={primaryLabel}
+              compareMode={compareMode}
+              compareLat={compareLat}
+              compareLon={compareLon}
+              compareLabel={compareLabel}
+              variableId={variableId}
+              startYear={startYear}
+              endYear={endYear}
+            />
 
             {/* Loading / Error / Chart + Analysis */}
             {fetchError ? (

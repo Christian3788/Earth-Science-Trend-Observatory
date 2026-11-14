@@ -39,7 +39,9 @@ interface WorldMapSelectorProps {
   onToggleHeatmap: () => void;
   heatmapOpacity: number;
   onChangeHeatmapOpacity: (val: number) => void;
+  variableId: string;
   variableName: string;
+  endYear: number;
   unit: string;
   decimals: number;
 }
@@ -157,7 +159,9 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
   onToggleHeatmap,
   heatmapOpacity,
   onChangeHeatmapOpacity,
+  variableId,
   variableName,
+  endYear,
   unit,
   decimals,
 }) => {
@@ -165,6 +169,14 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [hoverCoords, setHoverCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [hoveredPreset, setHoveredPreset] = useState<PresetRegion | null>(null);
+  const [satelliteBasemap, setSatelliteBasemap] = useState<boolean>(true);
+  const [basemapError, setBasemapError] = useState<boolean>(false);
+  const [overlayMode, setOverlayMode] = useState<'anomaly' | 'gibs'>('anomaly');
+  const [gibsFailed, setGibsFailed] = useState<boolean>(false);
+
+  useEffect(() => {
+    setGibsFailed(false);
+  }, [variableId, endYear]);
 
   const countryPaths = useMemo(() => {
     const topo = countries110m as unknown as Topology<{
@@ -268,27 +280,70 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
     <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
       {/* Top Map Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 border-b border-slate-200 bg-slate-50/70">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <span className="text-xs font-semibold text-slate-800 tracking-tight">
-            2D Global Spatial Map & Anomaly Heatmap
+            2D Global Spatial Map
           </span>
 
           <button
             type="button"
-            onClick={onToggleHeatmap}
+            onClick={() => setSatelliteBasemap((v) => !v)}
             className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-              heatmapEnabled
-                ? 'bg-blue-600 text-white border-blue-600'
+              satelliteBasemap && !basemapError
+                ? 'bg-slate-900 text-white border-slate-900'
                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>{heatmapEnabled ? 'Anomaly Heatmap: On' : 'Anomaly Heatmap: Off'}</span>
+            <span>Blue Marble Basemap</span>
           </button>
+
+          <div className="flex items-center gap-0.5 p-0.5 bg-slate-200/70 rounded-md">
+            <button
+              type="button"
+              onClick={() => {
+                setOverlayMode('anomaly');
+                if (!heatmapEnabled) onToggleHeatmap();
+              }}
+              className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                heatmapEnabled && overlayMode === 'anomaly'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Anomaly Grid
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOverlayMode('gibs');
+                if (!heatmapEnabled) onToggleHeatmap();
+              }}
+              className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                heatmapEnabled && overlayMode === 'gibs'
+                  ? 'bg-white text-blue-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              NASA Satellite Layer
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (heatmapEnabled) onToggleHeatmap();
+              }}
+              className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                !heatmapEnabled
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Off
+            </button>
+          </div>
 
           {heatmapEnabled && (
             <div className="flex items-center gap-2 text-[11px] text-slate-600">
-              <span>Opacity</span>
+              <Layers className="w-3.5 h-3.5 text-slate-500" />
               <input
                 type="range"
                 min={0.25}
@@ -296,13 +351,13 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
                 step={0.05}
                 value={heatmapOpacity}
                 onChange={(e) => onChangeHeatmapOpacity(Number(e.target.value))}
-                aria-label="Heatmap layer opacity"
+                aria-label="Overlay layer opacity"
                 className="w-16 accent-blue-600 cursor-pointer"
               />
             </div>
           )}
 
-          {heatmapLoading && heatmapEnabled && (
+          {heatmapLoading && heatmapEnabled && overlayMode === 'anomaly' && (
             <span className="inline-flex items-center gap-1 text-[11px] text-blue-700">
               <Loader2 className="w-3 h-3 animate-spin" />
               <span>Computing global grid...</span>
@@ -356,15 +411,34 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
         </div>
       </div>
 
-      {/* Layered Spatial Viewport: Heatmap Canvas + Vector Coastlines SVG */}
-      <div className="relative bg-slate-100 select-none">
-        {heatmapEnabled && heatmapData && (
+      {/* Layered Spatial Viewport: Real Blue Marble Basemap + Anomaly/GIBS Overlay + Vector Coastlines */}
+      <div className="relative bg-slate-900 select-none">
+        {satelliteBasemap && !basemapError && (
+          <img
+            src="/api/satellite/earth-texture?kind=shaded"
+            alt="NASA Blue Marble Shaded Relief and Bathymetry Basemap"
+            onError={() => setBasemapError(true)}
+            className="absolute inset-0 w-full h-full object-fill pointer-events-none"
+          />
+        )}
+
+        {heatmapEnabled && overlayMode === 'anomaly' && heatmapData && (
           <canvas
             ref={canvasRef}
             width={HEATMAP_W}
             height={HEATMAP_H}
-            style={{ opacity: heatmapOpacity }}
+            style={{ opacity: satelliteBasemap && !basemapError ? Math.min(0.76, heatmapOpacity) : heatmapOpacity }}
             className="absolute inset-0 w-full h-full pointer-events-none"
+          />
+        )}
+
+        {heatmapEnabled && overlayMode === 'gibs' && !gibsFailed && (
+          <img
+            src={`/api/satellite/global-layer?variable=${encodeURIComponent(variableId)}&year=${endYear}&month=7`}
+            alt={`NASA GIBS Satellite Layer for ${variableName}`}
+            onError={() => setGibsFailed(true)}
+            style={{ opacity: heatmapOpacity }}
+            className="absolute inset-0 w-full h-full object-fill pointer-events-none"
           />
         )}
 
@@ -379,7 +453,7 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
             setHoveredPreset(null);
           }}
           role="img"
-          aria-label="Interactive Equirectangular World Map with Spatial Anomaly Heatmap"
+          aria-label="Interactive Equirectangular World Map with NASA Satellite Basemap and Spatial Anomaly Heatmap"
         >
           {/* Graticules */}
           {lonGrid.map((lon) => (
@@ -389,7 +463,7 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
               y1={0}
               x2={lonToX(lon)}
               y2={SVG_H}
-              stroke={heatmapEnabled ? 'rgba(15, 23, 42, 0.14)' : '#E2E8F0'}
+              stroke={satelliteBasemap && !basemapError ? 'rgba(255, 255, 255, 0.16)' : 'rgba(15, 23, 42, 0.14)'}
               strokeWidth={lon === 0 ? 1 : 0.75}
             />
           ))}
@@ -401,10 +475,10 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
               x2={SVG_W}
               y2={latToY(lat)}
               stroke={
-                heatmapEnabled
+                satelliteBasemap && !basemapError
                   ? lat === 0
-                    ? 'rgba(15, 23, 42, 0.28)'
-                    : 'rgba(15, 23, 42, 0.14)'
+                    ? 'rgba(255, 255, 255, 0.34)'
+                    : 'rgba(255, 255, 255, 0.16)'
                   : lat === 0
                   ? '#CBD5E1'
                   : '#E2E8F0'
@@ -420,7 +494,7 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
             y1={latToY(66.5)}
             x2={SVG_W}
             y2={latToY(66.5)}
-            stroke={heatmapEnabled ? 'rgba(15, 23, 42, 0.2)' : '#CBD5E1'}
+            stroke={satelliteBasemap && !basemapError ? 'rgba(255, 255, 255, 0.24)' : '#CBD5E1'}
             strokeWidth={0.7}
             strokeDasharray="2 4"
           />
@@ -429,16 +503,16 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
             y1={latToY(-66.5)}
             x2={SVG_W}
             y2={latToY(-66.5)}
-            stroke={heatmapEnabled ? 'rgba(15, 23, 42, 0.2)' : '#CBD5E1'}
+            stroke={satelliteBasemap && !basemapError ? 'rgba(255, 255, 255, 0.24)' : '#CBD5E1'}
             strokeWidth={0.7}
             strokeDasharray="2 4"
           />
 
-          {/* Landmasses (Translucent over heatmap so anomalies show clearly across continents) */}
+          {/* Landmasses (Crisp coastlines over NASA Blue Marble & anomaly overlay) */}
           <g
-            fill={heatmapEnabled ? 'rgba(255, 255, 255, 0.06)' : '#FFFFFF'}
-            stroke={heatmapEnabled ? '#1E293B' : '#94A3B8'}
-            strokeWidth={heatmapEnabled ? 0.75 : 0.6}
+            fill={satelliteBasemap && !basemapError ? 'transparent' : heatmapEnabled ? 'rgba(255, 255, 255, 0.08)' : '#F8FAFC'}
+            stroke={satelliteBasemap && !basemapError ? 'rgba(255, 255, 255, 0.42)' : '#334155'}
+            strokeWidth={satelliteBasemap && !basemapError ? 0.65 : 0.7}
           >
             {countryPaths.map((d, idx) => (
               <path key={idx} d={d} />
@@ -446,7 +520,7 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
           </g>
 
           {/* Latitude axis markers */}
-          <g className="font-mono" fontSize="9" fill={heatmapEnabled ? '#0F172A' : '#64748B'}>
+          <g className="font-mono" fontSize="9" fill={satelliteBasemap && !basemapError ? '#F8FAFC' : '#334155'}>
             <text x={8} y={latToY(60) - 4}>60°N</text>
             <text x={8} y={latToY(0) - 4}>0° EQ</text>
             <text x={8} y={latToY(-60) - 4}>60°S</text>
@@ -549,7 +623,7 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
       </div>
 
       {/* Diverging Spatial Heatmap Legend Footer */}
-      {heatmapEnabled && heatmapData && (
+      {heatmapEnabled && overlayMode === 'anomaly' && heatmapData && (
         <div className="px-4 py-2.5 border-t border-slate-200 bg-white flex flex-wrap items-center justify-between gap-4 text-xs">
           <div className="flex flex-wrap items-center gap-2 text-slate-700">
             <span className="font-semibold text-slate-900">
@@ -581,6 +655,16 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
               +{maxAbsDeviation.toFixed(decimals)} {unit}
             </span>
           </div>
+        </div>
+      )}
+
+      {heatmapEnabled && overlayMode === 'gibs' && (
+        <div className="px-4 py-2.5 border-t border-slate-200 bg-white flex flex-wrap items-center justify-between gap-4 text-xs text-slate-600">
+          <div>
+            <span className="font-semibold text-slate-900">NASA GIBS Global Satellite Observation:</span>{' '}
+            {variableName} ({endYear}) composited over NASA Blue Marble Shaded Relief & Bathymetry.
+          </div>
+          <span className="font-mono text-[11px] text-slate-500">Source: NASA EOSDIS GIBS</span>
         </div>
       )}
     </div>

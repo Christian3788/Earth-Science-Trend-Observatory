@@ -21,6 +21,9 @@ interface EarthGlobe3DProps {
   activePresetId: string | null;
   comparePresetId: string | null;
   slopeDirection?: 'up' | 'down' | 'neutral';
+  variableId: string;
+  variableName: string;
+  endYear: number;
 }
 
 const EARTH_RADIUS = 2.0;
@@ -212,6 +215,9 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
   presets,
   activePresetId,
   comparePresetId,
+  variableId,
+  variableName,
+  endYear,
 }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
 
@@ -219,6 +225,8 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
   const [hoveredPreset, setHoveredPreset] = useState<PresetRegion | null>(null);
   const [autoRotate, setAutoRotate] = useState<boolean>(false);
   const [showSatellite, setShowSatellite] = useState<boolean>(true);
+  const [showDataOverlay, setShowDataOverlay] = useState<boolean>(false);
+  const [textureStatus, setTextureStatus] = useState<'loading' | 'nasa' | 'fallback'>('loading');
   const [webglError, setWebglError] = useState<string | null>(null);
 
   // Mutable refs so React prop changes update Three.js without re-creating renderer
@@ -239,6 +247,7 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
     updateMarkers?: () => void;
     focusOnLatLon?: (lat: number, lon: number) => void;
     resetView?: () => void;
+    updateGibsOverlay?: (enabled: boolean, varId: string, year: number) => void;
   }>({});
 
   const latestPropsRef = useRef({
@@ -372,17 +381,32 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
     scene.add(globeGroup);
 
     const maxAniso = renderer.capabilities.getMaxAnisotropy();
-    const { albedoMap, roughnessMap } = createEarthTextures(maxAniso);
+    const { albedoMap: fallbackAlbedo, roughnessMap } = createEarthTextures(maxAniso);
+    let activeAlbedoMap: THREE.Texture = fallbackAlbedo;
+    let activeBumpMap: THREE.Texture | null = null;
+    let activeGibsMap: THREE.Texture | null = null;
 
     const earthGeo = new THREE.SphereGeometry(EARTH_RADIUS, 72, 48);
     const earthMat = new THREE.MeshStandardMaterial({
-      map: albedoMap,
+      map: fallbackAlbedo,
       roughnessMap,
-      roughness: 1.0,
-      metalness: 0.06,
+      roughness: 0.92,
+      metalness: 0.05,
     });
     const earthMesh = new THREE.Mesh(earthGeo, earthMat);
     globeGroup.add(earthMesh);
+
+    // Optional NASA GIBS Global Scientific Layer Sphere
+    const gibsGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.006, 72, 48);
+    const gibsMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.72,
+      depthWrite: false,
+      visible: false,
+    });
+    const gibsMesh = new THREE.Mesh(gibsGeo, gibsMat);
+    gibsMesh.visible = false;
+    globeGroup.add(gibsMesh);
 
     // Atmospheric Fresnel Rim Glow Shell
     const atmoGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.028, 64, 48);
@@ -559,10 +583,48 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
       cameraFocusActive = false;
     });
 
+    let lastOverlayKey = '';
+    const texLoader = new THREE.TextureLoader();
+
+    const updateGibsOverlay = (enabled: boolean, varId: string, year: number) => {
+      if (!enabled) {
+        gibsMesh.visible = false;
+        return;
+      }
+      const key = `${varId}:${year}`;
+      if (key === lastOverlayKey && activeGibsMap) {
+        gibsMesh.visible = true;
+        return;
+      }
+      lastOverlayKey = key;
+      texLoader.load(
+        `/api/satellite/global-layer?variable=${encodeURIComponent(varId)}&year=${year}&month=7`,
+        (tex) => {
+          if (disposed) {
+            tex.dispose();
+            return;
+          }
+          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.anisotropy = maxAniso;
+          if (activeGibsMap) activeGibsMap.dispose();
+          activeGibsMap = tex;
+          gibsMat.map = tex;
+          gibsMat.visible = true;
+          gibsMat.needsUpdate = true;
+          gibsMesh.visible = true;
+        },
+        undefined,
+        () => {
+          if (!disposed) gibsMesh.visible = false;
+        },
+      );
+    };
+
     sceneSyncRef.current = {
       updateMarkers,
       focusOnLatLon,
       resetView,
+      updateGibsOverlay,
     };
 
     // Raycasting for hover readout and click-to-select coordinate / preset
@@ -663,6 +725,40 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
     const clock = new THREE.Clock();
     let orbitAngle = 0.6;
 
+    // Upgrade Earth surface to real NASA Blue Marble Shaded Relief & Bathymetry + ASTER GDEM relief
+    texLoader.load(
+      '/api/satellite/earth-texture?kind=shaded',
+      (tex) => {
+        if (disposed) {
+          tex.dispose();
+          return;
+        }
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = maxAniso;
+        activeAlbedoMap = tex;
+        earthMat.map = tex;
+        earthMat.needsUpdate = true;
+        fallbackAlbedo.dispose();
+        setTextureStatus('nasa');
+      },
+      undefined,
+      () => {
+        if (!disposed) setTextureStatus('fallback');
+      },
+    );
+
+    texLoader.load('/api/satellite/earth-texture?kind=relief', (bumpTex) => {
+      if (disposed) {
+        bumpTex.dispose();
+        return;
+      }
+      bumpTex.anisotropy = maxAniso;
+      activeBumpMap = bumpTex;
+      earthMat.bumpMap = bumpTex;
+      earthMat.bumpScale = 0.045;
+      earthMat.needsUpdate = true;
+    });
+
     function afterDraw(cb: () => void) {
       const gl = renderer.getContext() as WebGL2RenderingContext;
       const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
@@ -754,7 +850,10 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
       });
 
       arcMat.dispose();
-      albedoMap.dispose();
+      fallbackAlbedo.dispose();
+      if (activeAlbedoMap !== fallbackAlbedo) activeAlbedoMap.dispose();
+      if (activeBumpMap) activeBumpMap.dispose();
+      if (activeGibsMap) activeGibsMap.dispose();
       roughnessMap.dispose();
       envTex.dispose();
       renderer.forceContextLoss();
@@ -778,6 +877,10 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
     comparePresetId,
     activeSelectionTarget,
   ]);
+
+  useEffect(() => {
+    sceneSyncRef.current.updateGibsOverlay?.(showDataOverlay, variableId, endYear);
+  }, [showDataOverlay, variableId, endYear]);
 
   return (
     <div className="bg-slate-950 border border-slate-200 rounded-lg overflow-hidden">
@@ -857,6 +960,15 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
               </span>
             </div>
           )}
+          <div className="bg-slate-900/85 border border-slate-700 rounded px-2.5 py-1 text-[11px] text-slate-300">
+            {textureStatus === 'nasa'
+              ? showDataOverlay
+                ? `NASA Blue Marble + ${variableName} (${endYear})`
+                : 'NASA Blue Marble Shaded Relief & Bathymetry'
+              : textureStatus === 'loading'
+              ? 'Loading NASA Blue Marble imagery...'
+              : 'Vector Earth Basemap'}
+          </div>
         </div>
 
         {/* Hovered Preset Info */}
@@ -871,6 +983,16 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
 
         {/* Compact Bottom Control Strip (Zero Viewport Center Occlusion) */}
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-slate-900/92 border border-slate-700 rounded-md px-2.5 py-1.5">
+          <button
+            type="button"
+            onClick={() => setShowDataOverlay((v) => !v)}
+            className={`px-2.5 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              showDataOverlay ? 'bg-amber-600 text-white' : 'text-slate-300 hover:text-white'
+            }`}
+          >
+            Satellite Data Layer
+          </button>
+
           <button
             type="button"
             onClick={() => setShowSatellite((s) => !s)}
