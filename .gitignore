@@ -1,0 +1,11 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Local commit template (optional, user-specific config not required)
+# .gitmessage.txt is tracked intentionally for team guidance
