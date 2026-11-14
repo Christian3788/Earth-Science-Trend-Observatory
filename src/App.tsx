@@ -862,3 +862,175 @@ export default function App() {
             ) : (
               <WorldMapSelector
                 primaryLat={primaryLat}
+                primaryLon={primaryLon}
+                primaryLabel={primaryLabel}
+                compareMode={compareMode}
+                compareLat={compareLat}
+                compareLon={compareLon}
+                compareLabel={compareLabel}
+                activeSelectionTarget={activeSelectionTarget}
+                onSelectTargetChange={setActiveSelectionTarget}
+                onSelectCoordinate={handleMapSelect}
+                presets={PRESET_REGIONS}
+                activePresetId={activePresetId}
+                comparePresetId={comparePresetId}
+                heatmapData={heatmapData}
+                heatmapLoading={heatmapLoading}
+                heatmapEnabled={heatmapEnabled}
+                onToggleHeatmap={() => setHeatmapEnabled((v) => !v)}
+                heatmapOpacity={heatmapOpacity}
+                onChangeHeatmapOpacity={setHeatmapOpacity}
+                variableName={selectedVariable.name}
+                unit={selectedVariable.unit}
+                decimals={selectedVariable.decimals}
+              />
+            )}
+
+            {/* Loading / Error / Chart + Analysis */}
+            {fetchError ? (
+              <div className="bg-white border border-rose-200 rounded-lg p-6 flex items-center gap-3 text-rose-800">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <div className="text-sm">{fetchError}</div>
+              </div>
+            ) : loadingPrimary && !primarySummary ? (
+              <div className="bg-white border border-slate-200 rounded-lg p-12 flex flex-col items-center justify-center gap-3 text-slate-600">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <div className="text-xs font-medium">
+                  Acquiring {selectedVariable.name} observations for {primaryLabel}...
+                </div>
+              </div>
+            ) : primarySummary ? (
+              <div className="relative space-y-4">
+                {(loadingPrimary || loadingCompare) && (
+                  <div className="flex items-center gap-2 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-md px-3 py-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Updating regional Earth observation series...</span>
+                  </div>
+                )}
+
+                {chartView === '3d' && primaryData?.points?.length ? (
+                  <TimeSeries3DSurface
+                    points={primaryData.points}
+                    variableName={selectedVariable.name}
+                    unit={selectedVariable.unit}
+                    decimals={selectedVariable.decimals}
+                    regionLabel={primaryLabel}
+                    deseasonalize={deseasonalize}
+                  />
+                ) : (
+                  <TimeSeriesChart
+                    primarySummary={primarySummary}
+                    primaryLabel={primaryLabel}
+                    compareSummary={compareSummary}
+                    compareLabel={compareLabel}
+                    variableName={selectedVariable.name}
+                    unit={selectedVariable.unit}
+                    decimals={selectedVariable.decimals}
+                    deseasonalize={deseasonalize}
+                    resolution={resolution}
+                  />
+                )}
+
+                <StatisticalPanel
+                  primarySummary={primarySummary}
+                  primaryLabel={primaryLabel}
+                  primarySourceLabel={primaryData?.sourceLabel || selectedVariable.mission}
+                  compareSummary={compareSummary}
+                  compareLabel={compareLabel}
+                  variable={selectedVariable}
+                  highlightMetric={currentDemoStep?.highlightMetric}
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </main>
+
+      {/* Guided Demonstration Cases */}
+      <section id="demonstrations" className="border-t border-slate-200 bg-slate-100/60 py-12 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              Interactive Demonstration Case Studies
+            </h2>
+            <p className="text-sm text-slate-600 mt-1 max-w-3xl">
+              Watch step-by-step investigations showing how scientists uncover opposite regional trends from a single driver, remove seasonal swings, and test why observation span determines statistical significance.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {DEMONSTRATION_CASES.map((demo, idx) => (
+              <div
+                key={demo.id}
+                className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between gap-4"
+              >
+                <div>
+                  <div className="text-xs text-slate-500">
+                    <span>Case Study 0{idx + 1}</span>
+                    <span aria-hidden="true"> · </span>
+                    <span>{demo.steps.length} Interactive Steps</span>
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-900 mt-1">{demo.title}</h3>
+                  <div className="text-xs font-medium text-blue-700 mt-0.5">{demo.subtitle}</div>
+                  <p className="text-xs text-slate-600 mt-2 leading-relaxed">{demo.driverSummary}</p>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                  <span className="text-xs text-slate-500">
+                    Walkthrough configures map, filters & tests
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => startDemo(demo)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                  >
+                    <Play className="w-3.5 h-3.5" />
+                    <span>Launch Walkthrough</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Methodology & Variable Glossary */}
+      <MethodologySection
+        onSelectVariable={(id) => {
+          setMissionFilter('All');
+          setVariableId(id);
+        }}
+      />
+
+      {/* NASA & Space Agency Partner Resources */}
+      <ResourcesSection />
+
+      {/* Clean Footer */}
+      <footer className="border-t border-slate-200 bg-white py-6 px-6">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
+          <div>
+            TerraTrend Observatory · Earth Science Trend & Significance Analysis Workbench
+          </div>
+          <div>
+            Live data via NASA POWER (MERRA-2, CERES, GPM) · Profiles & resources aligned with SWOT, SeaWiFS, CSA RADARSAT (RCM), GEO.ca, Giovanni, AppEEARS, NOAA CDO & KNMI
+          </div>
+        </div>
+      </footer>
+
+      {/* Data Detective Inquiry Modal */}
+      <DataDetectiveModal
+        open={detectiveOpen}
+        onClose={() => setDetectiveOpen(false)}
+        onApplyRecommendation={(varId, region) => {
+          setMissionFilter('All');
+          setVariableId(varId);
+          setPrimaryLat(region.lat);
+          setPrimaryLon(region.lon);
+          setPrimaryLabel(region.shortName);
+          setActivePresetId(region.id);
+          setCompareMode(false);
+        }}
+      />
+    </div>
+  );
+}
