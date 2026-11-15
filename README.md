@@ -1,104 +1,70 @@
 # TerraTrend Observatory
 
-TerraTrend is an interactive Earth-science workbench for exploring environmental time series and regional trends. Choose a location and variable, inspect the observations on a map or globe, compare locations, and assess trends with statistical tests.
+**Is this place actually warming — or does it just feel that way?** TerraTrend is an interactive Earth-science workbench that lets anyone point at a spot on Earth, pull decades of NASA observations for it, and test whether the trend is statistically real.
 
 > **Data note:** This application combines live NASA POWER data for supported variables with modeled mission-reference or climatology fallback series for other variables and when the upstream data service is unavailable. The interface identifies the source for each series. A fallback series is not a substitute for a direct satellite observation or peer-reviewed analysis.
 
-## Features
+## The problem
 
-- **Explore a location:** Select a preset region, search for a place, enter latitude/longitude, or click the map. Switch between a 2D map and an interactive 3D orbital globe textured with NASA Blue Marble Shaded Relief & Bathymetry and ASTER GDEM terrain elevation.
-- **Compare regions:** Enable a second location to examine two regional time series side by side, connected by a great-circle arc on the 3D globe.
-- **Choose variables and time ranges:** Browse atmospheric, hydrospheric, land/biosphere, and energy/radiation variables from missions and products including MERRA-2, CERES, GPM, MODIS, OMI, AIRS, GLDAS, SWOT, SeaWiFS, and CSA RADARSAT Constellation.
-- **Inspect spatial patterns:** View the computed global anomaly heatmap or toggle live NASA EOSDIS GIBS global satellite layers over a real NASA Blue Marble basemap (on both the 2D map and 3D globe) with adjustable opacity.
-- **Compare real NASA satellite change imagery:** Inspect real regional NASA MODIS Terra True Color, Land Surface Temperature, Vegetation (NDVI), and AMSR2 Sea Ice captures using an interactive Split Wipe slider or Side-by-Side viewer across time (`Start Year` vs. `End Year`) or across regions (`Region A` vs. `Region B`).
-- **Analyze trends:** Display monthly, annual, or (where supported) daily series; deseasonalize monthly data; and review ordinary least-squares (OLS) regression and Mann–Kendall/Sen-slope statistics, p-values, and confidence intervals.
-- **Visualize and export:** Switch between 2D charts and a 3D Year × Month seasonal climate surface, and export the analysis as CSV.
-- **Learn as you explore:** Use the Data Detective inquiry, guided case studies, methodology notes, and resource links built into the app.
+Climate arguments usually die in anecdotes: one hot summer, one cold snap, one cherry-picked chart. Meanwhile NASA's open archives (POWER, GIBS, MERRA-2, MODIS, OMI, GPM…) hold 40+ years of observations — but they live behind scientific APIs no student, journalist, or policymaker will ever touch. TerraTrend closes that gap: pick a place, pick a variable, and get an honest time series with real significance testing, in seconds.
 
-## Requirements
+## What it does
 
-- Node.js and npm, or [Bun](https://bun.sh/).
-- Internet access for live NASA POWER observations, NASA EOSDIS GIBS satellite imagery, and Open-Meteo location search. The app falls back to calibrated reference series and procedural Earth textures when upstream services are unavailable.
+- **Explore a location:** preset regions, place search, latitude/longitude input, or click the 2D map / 3D orbital globe (NASA Blue Marble + ASTER GDEM textures).
+- **Compare regions:** overlay a second location — connected by a great-circle arc on the globe — to see teleconnections like the ENSO precipitation dipole.
+- **Choose variables and time ranges:** 17 variables across atmosphere, hydrosphere, land/biosphere, and energy/radiation, from missions including MERRA-2, CERES, GPM, MODIS, OMI, AIRS, GLDAS, SWOT, SeaWiFS, and CSA RCM.
+- **Inspect spatial patterns:** computed global anomaly heatmap, or live NASA GIBS satellite layers over a Blue Marble basemap (2D and 3D) with adjustable opacity.
+- **See real change imagery:** regional MODIS True Color, land-surface temperature, NDVI vegetation, and AMSR2 sea-ice captures with a Split Wipe / Side-by-Side comparator across years or regions.
+- **Test significance for real:** monthly/annual/daily series, deseasonalization, OLS regression with 95% CI bands, Mann–Kendall + Sen's slope, p-values — plus CSV export.
+- **Learn as you explore:** 6 guided demonstration cases, a Data Detective inquiry mode, methodology notes, and resource links built into the app.
 
-No API key or `.env` file is required for the standard local run. The `.env.example` contains placeholders for the AI Studio hosting environment; those values are not needed by the local app.
+## Run it in 60 seconds
 
-## Run locally
+Prerequisites: Node.js 22.6+ (or 24+) and internet access for live NASA services. No API key needed.
 
-Open PowerShell in the repository root and install dependencies:
-
-```powershell
-npm install
+```bash
+npm install --legacy-peer-deps   # one-time setup (see note below)
+npm run dev                      # start the app
 ```
 
-Or, if you use Bun (the repository includes `bun.lock`):
+Open **http://localhost:3000**. That's it — the Express server mounts Vite in development, so `npm run dev` is the only command you need.
 
-```powershell
-bun install
-```
+> `bun install` also works (the repo ships `bun.lock`). Plain `npm install` currently hits an upstream peer-dependency conflict, hence `--legacy-peer-deps`. Production deploy is `npm run build` + `npm start` — details in [docs/DEPLOY.md](./docs/DEPLOY.md).
 
-Start the development server:
+## Demo walkthrough (3 acts, ~5 minutes)
 
-```powershell
-npm run dev
-```
+Full click-by-click script with timings and judge Q&A: [docs/DEMO_SCRIPT.md](./docs/DEMO_SCRIPT.md).
 
-With Bun:
+1. **Act 1 — The hook (Arctic warming).** Guided case *"Arctic Amplification"*: raw Utqiaġvik skin temperature looks like noise (±30 °C seasons). Toggle **Remove Seasonal Cycle** — the warming slope jumps out, p-value significant. Cross-check with Surface Albedo: ice loss explains it.
+2. **Act 2 — The wow (two regions, one planet).** Guided case *"Opposite Trends, Same Earth Process"*: Borneo vs. Coastal Peru precipitation. Deseasonalize, overlay both — the lines surge in opposite directions. Same Pacific engine, opposite local stories. Spin the 3D globe with the live satellite layer on.
+3. **Act 3 — The proof (imagery + rigor).** Open **Real NASA Satellite Change Imagery**, wipe 2001 → 2024 NDVI or sea ice. Then point at the statistical panel: OLS slope, 95% CI, Mann–Kendall p-value — every claim on screen carries its own uncertainty.
 
-```powershell
-bun run dev
-```
+## 90-second pitch script
 
-Open **http://localhost:3000**. The Express server serves the API and mounts Vite in development, so use `npm run dev` rather than starting Vite alone.
+> "Every climate debate you've ever seen dies the same way — anecdotes. One hot summer versus one cold snap, and nobody checks the data.
+>
+> TerraTrend fixes that. I click anywhere on Earth — say, Utqiaġvik, Alaska — pick a NASA variable, and instantly get forty years of observations. Watch: raw temperatures look like pure noise. But one click removes the seasonal cycle… and there's the trend, with a p-value attached.
+>
+> Now compare Borneo and Peru — same ocean, opposite rainfall trends. And everything is backed by real NASA satellite imagery and published statistical tests, not vibes.
+>
+> Forty years of NASA data. Anywhere on Earth. Significance included."
 
-To use a different port in PowerShell:
+## Tech stack
 
-```powershell
-$env:PORT = "4000"
-npm run dev
-```
-
-Then open `http://localhost:4000`.
-
-## Production build
-
-Build the frontend and start the Express server in production mode from PowerShell:
-
-```powershell
-npm run build
-$env:NODE_ENV = "production"
-npm start
-```
-
-The server serves the built `dist` app and API on port `3000` by default. Set `$env:PORT` before `npm start` to change the port. `npm run preview` starts Vite's static preview server; it does not replace the Express server required for the API.
-
-## Available scripts
-
-| Script | Description |
+| Layer | Technology |
 | --- | --- |
-| `npm run dev` | Start Express with Vite middleware and hot module replacement. |
-| `npm run build` | Create the production frontend build in `dist`. |
-| `npm start` | Start the server; set `NODE_ENV=production` to serve the production build. |
-| `npm run preview` | Preview the Vite build as a static frontend. |
-| `npm run lint` | Run TypeScript checking (`tsc --noEmit`). |
+| UI | React 19, Vite 8, Tailwind CSS 4, three.js globe, SVG charts |
+| Statistics | Client-side OLS, Mann–Kendall/Sen's slope, t-tests, CI bands (`src/utils/statistics.ts`) |
+| Server | Express + `tsx`, in-memory cache (30 min JSON / 12 h imagery) |
+| Live data | NASA POWER point API, NASA GIBS WMS imagery, Open-Meteo geocoding |
 
-## Using the observatory
+## Data sources — and honest limits
 
-1. Select a region with the search box, preset locations, 2D map, 3D globe, or coordinate input.
-2. Choose a variable, start/end years, and the available temporal resolution.
-3. Optionally enable deseasonalization and/or a comparison region.
-4. Switch the 2D map between the **Anomaly Grid** and **NASA Satellite Layer** over the Blue Marble basemap, or toggle the **Satellite Data Layer** on the 3D globe.
-5. Use the **Real NASA Satellite Change Imagery** panel (`Split Wipe` or `Side-by-Side`) to inspect regional landscape, temperature, vegetation, or sea-ice changes across years or between Region A and Region B.
-6. Explore the plotted values, trend line, statistical summary, and 3D seasonal surface, or use **Export CSV** / a guided demonstration.
-
-Daily resolution is only available for variables that support it. NASA POWER daily requests are limited to a recent five-year window to keep responses manageable, and NASA POWER Surface Albedo (`ALLSKY_SRF_ALB`) begins in 2001. The app uses monthly observations for annual analysis and aggregates them in the browser.
-
-## Data sources and interpretation
-
-- **NASA POWER:** The server requests live point data for supported POWER parameters, including air/surface temperature, soil moisture, humidity, wind, precipitation, surface solar radiation, cloud amount, and surface albedo (`SRF_ALB` mapped to `ALLSKY_SRF_ALB`, 2001–present).
-- **NASA EOSDIS GIBS imagery:** Global globe/map basemaps use `BlueMarble_ShadedRelief_Bathymetry` and `ASTER_GDEM_Greyscale_Shaded_Relief`. Regional before/after and global satellite overlays fetch live WMS imagery from NASA GIBS (`MODIS_Terra_CorrectedReflectance_TrueColor` from 2000+, `MODIS_Terra_L3_Land_Surface_Temp_Monthly_Day` and `MODIS_Terra_L3_NDVI_Monthly` from 2001+, `AMSRU2_Sea_Ice_Concentration_12km` from 2013+, plus MERRA-2/IMERG/SMAP/OMI global rasters). Start years earlier than a satellite sensor's launch year are clamped to its earliest available year in the imagery comparator.
-- **Modeled/reference series:** Several catalog variables (for example, mission-specific vegetation, atmospheric composition, runoff, water-elevation, ocean-color, and wetland products) use calibrated reference profiles in this application rather than a live point-data connection. When an upstream POWER request fails or has insufficient data, supported POWER variables also use a labeled climatology fallback.
-- **Global heatmap:** The heatmap is a gridded regional anomaly view generated from reference profiles, optionally blended with live NASA POWER anchor locations when enough upstream samples are available. It should not be interpreted as a complete gridded NASA satellite product.
-- **Place search:** Place names are looked up through Open-Meteo's geocoding service and combined with a local catalog of geographic features. A `latitude, longitude` query can be used directly.
+- **Live NASA POWER** point data (9 parameters: air/skin temperature, soil wetness, humidity, wind, precipitation, solar radiation, cloud, albedo) is fetched per location and labeled `NASA POWER Live` in the UI.
+- **Live NASA GIBS** imagery: Blue Marble/ASTER basemaps, global scientific rasters, and regional before/after snapshots. Start years clamp to each sensor's launch year.
+- **Modeled/reference series:** 8 catalog variables (mission-specific vegetation, atmospheric composition, runoff, water elevation, ocean color, wetland products) use calibrated reference profiles, not a live point-data connection — the UI labels these, and judges *should* ask about them (see the Q&A in [docs/DEMO_SCRIPT.md](./docs/DEMO_SCRIPT.md)).
+- **Heatmap:** a gridded anomaly view from reference profiles, blended with live POWER anchors when enough upstream samples arrive — not a complete gridded NASA product.
+- **Fallbacks:** if an upstream request fails, supported variables degrade to a labeled climatology fallback rather than failing silently.
 
 Statistical significance indicates evidence for a trend under the implemented tests and assumptions; it does not establish causality or account for every source of uncertainty, autocorrelation, or measurement bias. Consult the in-app methodology and source metadata before drawing scientific conclusions.
 
@@ -116,11 +82,30 @@ The same Express server used by the app exposes:
 | `GET /api/satellite/global-layer?variable=…&year=…&month=7` | Serve a `1024×512` transparent NASA GIBS global scientific raster layer for the selected variable and year. |
 | `GET /api/satellite/regional-snapshot?lat=…&lon=…&year=…&month=…&span=2.4&layer=truecolor` | Serve an aspect-corrected `800×520` regional NASA GIBS capture (`truecolor`, `viirs`, `lst`, `ndvi`, `seaice`). |
 
-JSON responses are cached in memory for 30 minutes and NASA GIBS satellite images are cached for 12 hours. Example health check:
+JSON responses are cached in memory for 30 minutes and NASA GIBS satellite images for 12 hours.
 
-```text
-http://localhost:3000/api/health
+Daily resolution is only available for variables that support it. NASA POWER daily requests are limited to a recent five-year window, and Surface Albedo (`ALLSKY_SRF_ALB`) begins in 2001. The app uses monthly observations for annual analysis and aggregates them in the browser.
+
+## Verify your setup
+
+```bash
+npm run lint                      # TypeScript check (tsc --noEmit)
+bash scripts/smoke.sh             # hits every endpoint (server must be running)
 ```
+
+`scripts/smoke.sh` checks health, live time series, heatmap grid shape, geocoding, both satellite image endpoints, and the app shell — exiting nonzero on any failure. Run it against a custom port with `bash scripts/smoke.sh http://localhost:4000`.
+
+## Available scripts
+
+| Script | Description |
+| --- | --- |
+| `npm run dev` | Start Express with Vite middleware and hot module replacement. |
+| `npm run build` | Create the production frontend build in `dist`. |
+| `npm start` | Start the server; set `NODE_ENV=production` to serve the production build. Requires Node 22.6+ (native TS type-stripping). |
+| `npm run preview` | Preview the Vite build as a static frontend (no API — not a substitute for the Express server). |
+| `npm run lint` | Run TypeScript checking (`tsc --noEmit`). |
+| `npm test` | Run the test suite (`tests/`). |
+| `npm run verify:science` | Run the science/statistical-correctness tests. |
 
 ## Project structure
 
@@ -132,9 +117,14 @@ src/
   App.tsx           Main observatory interface and client-side data flow
   main.tsx          React entry point
 server.ts           Express API, NASA POWER/GIBS/Open-Meteo proxies, and Vite integration
-vite.config.ts      Vite, React, Tailwind CSS, and development settings
-docs/               Attribution and contribution guidance
+scripts/smoke.sh    End-to-end smoke test for all endpoints
+docs/               Demo script, deploy guide, attribution, contribution guidance
 ```
+
+## Docs
+
+- [docs/DEMO_SCRIPT.md](./docs/DEMO_SCRIPT.md) — 90-second pitch, 5-minute demo, judge Q&A, failure fallbacks.
+- [docs/DEPLOY.md](./docs/DEPLOY.md) — install, dev, production build, ports, troubleshooting.
 
 ## Contributing
 
