@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { feature } from 'topojson-client';
 import type { Topology, GeometryCollection } from 'topojson-specification';
 import countries110m from 'world-atlas/countries-110m.json';
-import { Layers, Loader2 } from 'lucide-react';
+import { Layers, Loader2, Pause, Play } from 'lucide-react';
 import type { PresetRegion } from '../data/earthCatalog';
 
 export interface SpatialHeatmapData {
@@ -44,6 +44,7 @@ interface WorldMapSelectorProps {
   endYear: number;
   unit: string;
   decimals: number;
+  onChangeEndYear?: (yr: number) => void;
 }
 
 const SVG_W = 960;
@@ -164,6 +165,7 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
   endYear,
   unit,
   decimals,
+  onChangeEndYear,
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -173,10 +175,20 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
   const [basemapError, setBasemapError] = useState<boolean>(false);
   const [overlayMode, setOverlayMode] = useState<'anomaly' | 'gibs'>('anomaly');
   const [gibsFailed, setGibsFailed] = useState<boolean>(false);
+  const [decadeSweeping, setDecadeSweeping] = useState<boolean>(false);
 
   useEffect(() => {
     setGibsFailed(false);
   }, [variableId, endYear]);
+
+  useEffect(() => {
+    if (!decadeSweeping || !onChangeEndYear) return;
+    const minSweep = overlayMode === 'gibs' ? 2001 : 1995;
+    const timer = window.setInterval(() => {
+      onChangeEndYear(endYear >= 2024 ? minSweep : endYear + 3 > 2024 ? 2024 : endYear + 3);
+    }, 1150);
+    return () => window.clearInterval(timer);
+  }, [decadeSweeping, endYear, overlayMode, onChangeEndYear]);
 
   const countryPaths = useMemo(() => {
     const topo = countries110m as unknown as Topology<{
@@ -355,6 +367,22 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
                 className="w-16 accent-blue-600 cursor-pointer"
               />
             </div>
+          )}
+
+          {onChangeEndYear && (
+            <button
+              type="button"
+              onClick={() => setDecadeSweeping((s) => !s)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                decadeSweeping
+                  ? 'bg-blue-700 text-white border-blue-700'
+                  : 'bg-white text-slate-800 border-slate-300 hover:bg-slate-100'
+              }`}
+              title="Animate observation year across decades"
+            >
+              {decadeSweeping ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              <span>{decadeSweeping ? `Sweeping (${endYear})` : 'Decade Sweep'}</span>
+            </button>
           )}
 
           {heatmapLoading && heatmapEnabled && overlayMode === 'anomaly' && (
@@ -561,6 +589,16 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
           {compareMode && (
             <g pointerEvents="none">
               <circle
+                key={`ping-b-${compareLat}-${compareLon}`}
+                cx={lonToX(compareLon)}
+                cy={latToY(compareLat)}
+                r={12}
+                fill="none"
+                stroke="#F59E0B"
+                strokeWidth={2}
+                className="animate-target-ping"
+              />
+              <circle
                 cx={lonToX(compareLon)}
                 cy={latToY(compareLat)}
                 r={10}
@@ -587,6 +625,16 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
 
           {/* Primary Region A Target Crosshair */}
           <g pointerEvents="none">
+            <circle
+              key={`ping-a-${primaryLat}-${primaryLon}`}
+              cx={lonToX(primaryLon)}
+              cy={latToY(primaryLat)}
+              r={12}
+              fill="none"
+              stroke="#38BDF8"
+              strokeWidth={2.2}
+              className="animate-target-ping"
+            />
             <circle
               cx={lonToX(primaryLon)}
               cy={latToY(primaryLat)}

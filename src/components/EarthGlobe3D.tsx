@@ -472,6 +472,19 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
     const satellite = buildCompositeSatellite();
     orbitGroup.add(satellite);
 
+    // Nadir surface swath footprint ring directly beneath the orbiting satellite
+    const nadirGeo = new THREE.RingGeometry(0.08, 0.13, 32);
+    nadirGeo.rotateX(-Math.PI / 2);
+    const nadirMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.65,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const nadirFootprint = new THREE.Mesh(nadirGeo, nadirMat);
+    orbitGroup.add(nadirFootprint);
+
     // Preset Hotspot Pins (clickable on 3D surface)
     const presetPinsGroup = new THREE.Group();
     globeGroup.add(presetPinsGroup);
@@ -783,7 +796,7 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
       if (disposed) return;
       const delta = Math.min(0.1, clock.getDelta());
 
-      // Orbiting satellite kinematics
+      // Orbiting satellite kinematics + surface nadir footprint pulse
       orbitGroup.visible = showSatelliteRef.current;
       orbitTrack.visible = showSatelliteRef.current;
       if (showSatelliteRef.current) {
@@ -793,6 +806,12 @@ export const EarthGlobe3D: React.FC<EarthGlobe3DProps> = ({
         // Point nadir radiometer (-Y) toward Earth center (0,0,0)
         _vA.copy(_satPos).normalize();
         satellite.quaternion.setFromUnitVectors(_up, _vA);
+
+        nadirFootprint.position.copy(_vA).multiplyScalar(EARTH_RADIUS * 1.008);
+        nadirFootprint.quaternion.setFromUnitVectors(_up, _vA);
+        const pulse = 0.88 + 0.28 * Math.sin(orbitAngle * 4.5);
+        nadirFootprint.scale.set(pulse, 1, pulse);
+        nadirMat.opacity = 0.35 + 0.35 * (1 - (pulse - 0.88) / 0.56);
       }
 
       // Smooth exponential camera glide toward newly chosen region

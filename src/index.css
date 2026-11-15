@@ -26,3 +26,50 @@
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+@keyframes target-ping {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.95;
+  }
+  70% {
+    transform: scale(2.1);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+.animate-target-ping {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: target-ping 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes spotlight-sweep {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.32);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.14);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+.animate-spotlight-card {
+  animation: spotlight-sweep 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-target-ping,
+  .animate-spotlight-card {
+    animation: none !important;
+  }
+}

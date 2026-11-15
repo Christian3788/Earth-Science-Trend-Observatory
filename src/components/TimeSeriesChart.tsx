@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { motion } from 'motion/react';
 import type { TrendAnalysisSummary } from '../utils/statistics';
 
 interface TimeSeriesChartProps {
@@ -144,6 +145,8 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
       last.decimalYear,
     ).toFixed(1)},${toSvgY(last.trendValue).toFixed(1)}`;
   }, [compareSummary, minX, maxX, minY, maxY]);
+
+  const seriesAnimKey = `${primaryLabel}-${variableName}-${resolution}-${deseasonalize}-${primarySummary.ols.n}-${minX.toFixed(2)}-${maxX.toFixed(2)}`;
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
     const svg = e.currentTarget;
@@ -293,42 +296,67 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
           />
 
           {/* 95% Confidence Interval band */}
-          {primaryCiBandPath && <path d={primaryCiBandPath} fill="rgba(37, 99, 235, 0.11)" />}
+          {primaryCiBandPath && (
+            <motion.path
+              key={`ci-${seriesAnimKey}`}
+              d={primaryCiBandPath}
+              fill="rgba(37, 99, 235, 0.12)"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.45, delay: 0.25, ease: 'easeOut' }}
+            />
+          )}
 
           {/* Primary Data Line */}
-          <path
+          <motion.path
+            key={`series-${seriesAnimKey}`}
             d={primarySeriesPath}
             fill="none"
             stroke="#2563EB"
             strokeWidth={compareSummary ? 1.5 : 1.75}
             strokeOpacity={0.85}
+            initial={{ pathLength: 0, opacity: 0.4 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           />
 
           {/* Primary OLS Trend Line */}
-          <path
+          <motion.path
+            key={`trend-${seriesAnimKey}`}
             d={primaryTrendPath}
             fill="none"
             stroke="#1E3A8A"
             strokeWidth={2.2}
             strokeDasharray="6 4"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
           />
 
           {/* Comparison Data + Trend Line */}
           {compareSummary && (
             <>
-              <path
+              <motion.path
+                key={`cmp-series-${seriesAnimKey}-${compareLabel}`}
                 d={compareSeriesPath}
                 fill="none"
                 stroke="#D97706"
                 strokeWidth={1.5}
                 strokeOpacity={0.85}
+                initial={{ pathLength: 0, opacity: 0.4 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 0.65, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
               />
-              <path
+              <motion.path
+                key={`cmp-trend-${seriesAnimKey}-${compareLabel}`}
                 d={compareTrendPath}
                 fill="none"
                 stroke="#92400E"
                 strokeWidth={2.2}
                 strokeDasharray="6 4"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.32, ease: [0.22, 1, 0.36, 1] }}
               />
             </>
           )}

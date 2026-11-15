@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import {
   Compass,
   Download,
@@ -340,97 +341,139 @@ export default function App() {
 
   const currentDemoStep = activeDemo ? activeDemo.steps[demoStepIndex] : null;
 
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-950 flex flex-col">
-      {/* 3-Zone Top Bar Contract */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xs border-b border-slate-200">
-        <div className="max-w-[1440px] mx-auto px-6 h-15 flex items-center justify-between gap-8">
-          <a
-            href="#observatory"
-            className="text-xl font-display font-extrabold tracking-tight text-slate-950 whitespace-nowrap shrink-0"
-          >
-            TerraTrend
-          </a>
+  const coordReadout = `${Math.abs(primaryLat).toFixed(2)}°${primaryLat >= 0 ? 'N' : 'S'}, ${Math.abs(
+    primaryLon,
+  ).toFixed(2)}°${primaryLon >= 0 ? 'E' : 'W'}`;
 
-          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-800">
+  return (
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen bg-slate-50 text-slate-950 flex flex-col">
+        {/* 3-Zone Top Bar Contract */}
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-xs border-b border-slate-200">
+          <div className="max-w-[1440px] mx-auto px-6 h-15 flex items-center justify-between gap-8">
             <a
               href="#observatory"
-              className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0"
+              className="text-xl font-display font-extrabold tracking-tight text-slate-950 whitespace-nowrap shrink-0"
             >
-              Observatory
+              TerraTrend
             </a>
-            <button
-              type="button"
-              onClick={() => setDetectiveOpen(true)}
-              className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              Data Detective
-            </button>
-            <a
-              href="#demonstrations"
-              className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0"
-            >
-              Demonstrations
-            </a>
-            <a
-              href="#methodology"
-              className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0"
-            >
-              Methodology
-            </a>
-            <a
-              href="#resources"
-              className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0"
-            >
-              Resources
-            </a>
-          </nav>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => startDemo(DEMONSTRATION_CASES[0])}
-              className="px-4 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              Run Guided Demo
-            </button>
-          </div>
-        </div>
-      </header>
+            <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-800">
+              <a
+                href="#observatory"
+                className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0"
+              >
+                Observatory
+              </a>
+              <button
+                type="button"
+                onClick={() => setDetectiveOpen(true)}
+                className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                Data Detective
+              </button>
+              <a
+                href="#demonstrations"
+                className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0"
+              >
+                Demonstrations
+              </a>
+              <a
+                href="#methodology"
+                className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0"
+              >
+                Methodology
+              </a>
+              <a
+                href="#resources"
+                className="hover:text-blue-700 transition-colors whitespace-nowrap shrink-0"
+              >
+                Resources
+              </a>
+            </nav>
 
-      {/* Main Observatory Workspace */}
-      <main id="observatory" className="flex-1 max-w-[1440px] w-full mx-auto px-6 py-6">
-        {/* Compact Workspace Title & Action Strip */}
-        <div className="flex flex-wrap items-end justify-between gap-4 mb-5">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight text-balance">
-              Earth Science Trend Observatory
-            </h1>
-            <p className="text-sm sm:text-base text-slate-700 mt-1.5 max-w-2xl leading-relaxed">
-              Select a NASA satellite or global model variable, pick any region on Earth, remove seasonal cycles, and test whether the long-term trend is statistically significant.
-            </p>
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => startDemo(DEMONSTRATION_CASES[0])}
+                className="px-4 py-2 text-sm font-semibold text-white bg-blue-700 hover:bg-blue-800 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                Run Guided Demo
+              </button>
+            </div>
           </div>
+        </header>
 
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setDetectiveOpen(true)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-900 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              <Compass className="w-4 h-4 text-blue-700" />
-              <span>Data Detective Inquiry</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleDownloadCSV}
-              disabled={!primarySummary}
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-900 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 disabled:opacity-40 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              <Download className="w-4 h-4 text-slate-700" />
-              <span>Export CSV</span>
-            </button>
+        {/* Main Observatory Workspace */}
+        <main id="observatory" className="flex-1 max-w-[1440px] w-full mx-auto px-6 py-6">
+          {/* Compact Workspace Title & Live Telemetry Strip */}
+          <div className="bg-white border border-slate-200 rounded-lg px-5 py-4 mb-5">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-950 tracking-tight text-balance">
+                  Earth Science Trend Observatory
+                </h1>
+                <p className="text-sm sm:text-base text-slate-700 mt-1.5 max-w-2xl leading-relaxed">
+                  Select a NASA satellite or global model variable, pick any region on Earth, remove seasonal cycles, and test whether the long-term trend is statistically significant.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setDetectiveOpen(true)}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-900 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  <Compass className="w-4 h-4 text-blue-700" />
+                  <span>Data Detective Inquiry</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadCSV}
+                  disabled={!primarySummary}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-900 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 disabled:opacity-40 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                >
+                  <Download className="w-4 h-4 text-slate-700" />
+                  <span>Export CSV</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Live Telemetry Coordinate & Mission Strip */}
+            <div className="relative z-10 mt-3.5 pt-3 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-700">
+                <span className="font-bold text-slate-950">ACTIVE TELEMETRY</span>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={`${primaryLabel}-${coordReadout}`}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.2 }}
+                    className="tabular-nums font-semibold text-blue-700"
+                  >
+                    {primaryLabel} ({coordReadout})
+                  </motion.span>
+                </AnimatePresence>
+                <span aria-hidden="true">·</span>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={`${selectedVariable.id}-${selectedVariable.mission}`}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.2 }}
+                    className="font-semibold text-slate-900"
+                  >
+                    {selectedVariable.mission} / {selectedVariable.id}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+              <div className="text-slate-700 font-medium tabular-nums">
+                Missions: MERRA-2 · CERES · GPM · MODIS · SWOT · CSA RCM
+              </div>
+            </div>
           </div>
-        </div>
 
         {/* Active Guided Demonstration Walkthrough Banner */}
         {activeDemo && currentDemoStep && (
@@ -889,6 +932,7 @@ export default function App() {
                 endYear={endYear}
                 unit={selectedVariable.unit}
                 decimals={selectedVariable.decimals}
+                onChangeEndYear={setEndYear}
               />
             )}
 
@@ -980,8 +1024,12 @@ export default function App() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {DEMONSTRATION_CASES.map((demo, idx) => (
-              <div
+              <motion.div
                 key={demo.id}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.16 }}
+                transition={{ duration: 0.35, delay: idx * 0.06, ease: [0.22, 1, 0.36, 1] }}
                 className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between gap-4"
               >
                 <div>
@@ -1008,7 +1056,7 @@ export default function App() {
                     <span>Launch Walkthrough</span>
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -1051,6 +1099,7 @@ export default function App() {
           setCompareMode(false);
         }}
       />
-    </div>
+      </div>
+    </MotionConfig>
   );
 }

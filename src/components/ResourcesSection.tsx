@@ -1,5 +1,6 @@
 import React from 'react';
 import { ExternalLink } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface ResourceItem {
   title: string;
@@ -147,9 +148,13 @@ export const ResourcesSection: React.FC = () => {
               <div key={cat}>
                 <h3 className="text-base font-bold text-slate-950 mb-3">{cat}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {items.map((item) => (
-                    <div
+                  {items.map((item, idx) => (
+                    <motion.div
                       key={item.title}
+                      initial={{ opacity: 0, y: 12 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.14 }}
+                      transition={{ duration: 0.32, delay: (idx % 3) * 0.06, ease: [0.22, 1, 0.36, 1] }}
                       className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col justify-between gap-3"
                     >
                       <div>
@@ -170,7 +175,7 @@ export const ResourcesSection: React.FC = () => {
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>

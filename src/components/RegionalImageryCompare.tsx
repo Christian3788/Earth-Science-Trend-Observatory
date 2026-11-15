@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Columns2, Loader2, MoveHorizontal, Satellite } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Columns2, Loader2, MoveHorizontal, Play, Satellite } from 'lucide-react';
 
 type SatelliteLayerKind = 'truecolor' | 'lst' | 'ndvi' | 'seaice';
 
@@ -59,6 +59,9 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
   const [errorKeys, setErrorKeys] = useState<Record<string, boolean>>({});
 
   const swipeRef = useRef<HTMLDivElement | null>(null);
+  const peekAnimRef = useRef<number>(0);
+  const peekPlayedRef = useRef<boolean>(false);
+  const userInteractedRef = useRef<boolean>(false);
 
   useEffect(() => {
     const suggested = defaultLayerForVariable(variableId);
@@ -135,6 +138,50 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
     const pct = ((clientX - rect.left) / Math.max(1, rect.width)) * 100;
     setSliderPct(Math.max(4, Math.min(96, pct)));
   };
+
+  const runSplitWipePeek = useCallback(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    cancelAnimationFrame(peekAnimRef.current);
+    const start = performance.now();
+    const duration = 1650;
+
+    const frame = (now: number) => {
+      if (userInteractedRef.current) return;
+      const t = Math.min(1, (now - start) / duration);
+      // Smooth sine-wave peek: 50% -> 72% -> 28% -> 50%
+      const easeEnvelope = Math.sin(t * Math.PI);
+      const wave = Math.sin(t * Math.PI * 2) * 22 * easeEnvelope;
+      setSliderPct(50 + wave);
+      if (t < 1) {
+        peekAnimRef.current = requestAnimationFrame(frame);
+      } else {
+        setSliderPct(50);
+      }
+    };
+
+    peekAnimRef.current = requestAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    const el = swipeRef.current;
+    if (!el || viewLayout !== 'swipe') return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && !peekPlayedRef.current && !userInteractedRef.current) {
+            peekPlayedRef.current = true;
+            runSplitWipePeek();
+          }
+        }
+      },
+      { threshold: 0.45 },
+    );
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(peekAnimRef.current);
+    };
+  }, [viewLayout, runSplitWipePeek]);
 
   useEffect(() => {
     if (!dragging) return;
@@ -273,6 +320,21 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
               <span>Side-by-Side</span>
             </button>
           </div>
+
+          {viewLayout === 'swipe' && (
+            <button
+              type="button"
+              onClick={() => {
+                userInteractedRef.current = false;
+                runSplitWipePeek();
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              title="Preview split-wipe reveal animation"
+            >
+              <Play className="w-3 h-3" />
+              <span>Wipe Peek</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -281,6 +343,8 @@ export const RegionalImageryCompare: React.FC<RegionalImageryCompareProps> = ({
         <div
           ref={swipeRef}
           onPointerDown={(e) => {
+            userInteractedRef.current = true;
+            cancelAnimationFrame(peekAnimRef.current);
             setDragging(true);
             updateSliderFromClientX(e.clientX);
           }}

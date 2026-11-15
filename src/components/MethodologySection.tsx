@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { EARTH_VARIABLES, type EarthSphere } from '../data/earthCatalog';
 
 interface MethodologySectionProps {
@@ -35,32 +36,32 @@ export const MethodologySection: React.FC<MethodologySectionProps> = ({ onSelect
 
         {/* 3-Column Statistical Methods Guide */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="border border-slate-200 rounded-lg p-5 bg-slate-50/70">
-            <h3 className="text-base font-bold text-slate-950">
-              01. Removing the Seasonal Cycle
-            </h3>
-            <p className="text-sm text-slate-700 mt-2 leading-relaxed">
-              Winter-to-summer swings often dwarf multi-decade climate trends. By computing the long-term average for each calendar month (January through December) and subtracting it from every observation, we produce deseasonalized anomalies that reveal subtle long-term shifts.
-            </p>
-          </div>
-
-          <div className="border border-slate-200 rounded-lg p-5 bg-slate-50/70">
-            <h3 className="text-base font-bold text-slate-950">
-              02. Linear Regression & Student’s t-Test
-            </h3>
-            <p className="text-sm text-slate-700 mt-2 leading-relaxed">
-              Ordinary Least Squares (OLS) fits the best straight line across time, reporting the rate of change per decade and its 95% confidence interval. Student’s t-test calculates the probability (p-value) of observing such a steep slope purely by chance; p &lt; 0.05 indicates statistical significance.
-            </p>
-          </div>
-
-          <div className="border border-slate-200 rounded-lg p-5 bg-slate-50/70">
-            <h3 className="text-base font-bold text-slate-950">
-              03. Mann-Kendall & Sen’s Slope
-            </h3>
-            <p className="text-sm text-slate-700 mt-2 leading-relaxed">
-              Earth science records often contain extreme flood or heatwave outliers. The non-parametric Mann-Kendall test evaluates every pair of points in order (τ from −1 to +1) without assuming a normal distribution, while Sen’s slope takes the median pairwise rate of change.
-            </p>
-          </div>
+          {[
+            {
+              title: '01. Removing the Seasonal Cycle',
+              body: 'Winter-to-summer swings often dwarf multi-decade climate trends. By computing the long-term average for each calendar month (January through December) and subtracting it from every observation, we produce deseasonalized anomalies that reveal subtle long-term shifts.',
+            },
+            {
+              title: '02. Linear Regression & Student’s t-Test',
+              body: 'Ordinary Least Squares (OLS) fits the best straight line across time, reporting the rate of change per decade and its 95% confidence interval. Student’s t-test calculates the probability (p-value) of observing such a steep slope purely by chance; p < 0.05 indicates statistical significance.',
+            },
+            {
+              title: '03. Mann-Kendall & Sen’s Slope',
+              body: 'Earth science records often contain extreme flood or heatwave outliers. The non-parametric Mann-Kendall test evaluates every pair of points in order (τ from −1 to +1) without assuming a normal distribution, while Sen’s slope takes the median pairwise rate of change.',
+            },
+          ].map((card, idx) => (
+            <motion.div
+              key={card.title}
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.18 }}
+              transition={{ duration: 0.35, delay: idx * 0.07, ease: [0.22, 1, 0.36, 1] }}
+              className="border border-slate-200 rounded-lg p-5 bg-slate-50/70"
+            >
+              <h3 className="text-base font-bold text-slate-950">{card.title}</h3>
+              <p className="text-sm text-slate-700 mt-2 leading-relaxed">{card.body}</p>
+            </motion.div>
+          ))}
         </div>
 
         {/* Filterable Variable Glossary */}
@@ -88,9 +89,13 @@ export const MethodologySection: React.FC<MethodologySectionProps> = ({ onSelect
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredVars.map((v) => (
-              <div
+            {filteredVars.map((v, idx) => (
+              <motion.div
                 key={v.id}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.12 }}
+                transition={{ duration: 0.3, delay: (idx % 6) * 0.05, ease: [0.22, 1, 0.36, 1] }}
                 className="border border-slate-200 rounded-lg p-4 flex flex-col justify-between bg-white hover:border-slate-300 transition-colors"
               >
                 <div>
@@ -120,7 +125,7 @@ export const MethodologySection: React.FC<MethodologySectionProps> = ({ onSelect
                     Plot Variable →
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

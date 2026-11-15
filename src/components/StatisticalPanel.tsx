@@ -1,7 +1,53 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { motion } from 'motion/react';
 import type { EarthVariable } from '../data/earthCatalog';
 import { formatPValue, type TrendAnalysisSummary } from '../utils/statistics';
+
+function useAnimatedNumber(target: number, durationMs = 340): number {
+  const [display, setDisplay] = useState<number>(target);
+  const currentRef = useRef<number>(target);
+
+  useEffect(() => {
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced || !Number.isFinite(target)) {
+      currentRef.current = target;
+      setDisplay(target);
+      return;
+    }
+
+    const from = Number.isFinite(currentRef.current) ? currentRef.current : target;
+    if (Math.abs(target - from) < 1e-6) {
+      currentRef.current = target;
+      setDisplay(target);
+      return;
+    }
+
+    const startTime = performance.now();
+    let frameId = 0;
+
+    const step = (now: number) => {
+      const t = Math.min(1, (now - startTime) / durationMs);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const val = from + (target - from) * eased;
+      currentRef.current = val;
+      setDisplay(val);
+      if (t < 1) {
+        frameId = requestAnimationFrame(step);
+      } else {
+        currentRef.current = target;
+        setDisplay(target);
+      }
+    };
+
+    frameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frameId);
+  }, [target, durationMs]);
+
+  return display;
+}
 
 interface StatisticalPanelProps {
   primarySummary: TrendAnalysisSummary;
@@ -23,6 +69,12 @@ export const StatisticalPanel: React.FC<StatisticalPanelProps> = ({
   highlightMetric,
 }) => {
   const { ols, mannKendall } = primarySummary;
+
+  const animSlopeDecade = useAnimatedNumber(ols.slopePerDecade);
+  const animTotalChange = useAnimatedNumber(ols.totalChange);
+  const animPValue = useAnimatedNumber(ols.pValue);
+  const animTau = useAnimatedNumber(mannKendall.tau);
+  const animSensSlope = useAnimatedNumber(mannKendall.sensSlopePerDecade);
 
   const DirectionIcon =
     primarySummary.verdictDirection === 'up'
@@ -52,14 +104,16 @@ export const StatisticalPanel: React.FC<StatisticalPanelProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <div
           className={`bg-white border rounded-lg p-4 transition-colors ${
-            highlightMetric === 'slope' ? 'border-blue-500 ring-1 ring-blue-500/30' : 'border-slate-200'
+            highlightMetric === 'slope'
+              ? 'border-blue-600 ring-1 ring-blue-500/40 animate-spotlight-card'
+              : 'border-slate-200'
           }`}
         >
           <div className="text-xs font-semibold text-slate-700">Rate of Change (OLS)</div>
           <div className="mt-1.5 flex items-baseline gap-1.5">
             <span className="text-2xl font-mono font-bold tabular-nums text-slate-950">
-              {sign(ols.slopePerDecade)}
-              {ols.slopePerDecade.toFixed(variable.decimals)}
+              {sign(animSlopeDecade)}
+              {animSlopeDecade.toFixed(variable.decimals)}
             </span>
             <span className="text-xs font-mono font-semibold text-slate-700">{variable.unit}/dec</span>
           </div>
@@ -73,8 +127,8 @@ export const StatisticalPanel: React.FC<StatisticalPanelProps> = ({
           <div className="text-xs font-semibold text-slate-700">Total Period Change</div>
           <div className="mt-1.5 flex items-baseline gap-1.5">
             <span className="text-2xl font-mono font-bold tabular-nums text-slate-950">
-              {sign(ols.totalChange)}
-              {ols.totalChange.toFixed(variable.decimals)}
+              {sign(animTotalChange)}
+              {animTotalChange.toFixed(variable.decimals)}
             </span>
             <span className="text-xs font-mono font-semibold text-slate-700">{variable.unit}</span>
           </div>
@@ -86,14 +140,14 @@ export const StatisticalPanel: React.FC<StatisticalPanelProps> = ({
         <div
           className={`bg-white border rounded-lg p-4 transition-colors ${
             highlightMetric === 'ttest' || highlightMetric === 'ci'
-              ? 'border-blue-500 ring-1 ring-blue-500/30'
+              ? 'border-blue-600 ring-1 ring-blue-500/40 animate-spotlight-card'
               : 'border-slate-200'
           }`}
         >
           <div className="text-xs font-semibold text-slate-700">Student’s t-Test & 95% CI</div>
           <div className="mt-1.5 flex items-baseline gap-2">
             <span className="text-2xl font-mono font-bold tabular-nums text-slate-950">
-              p {ols.pValue < 0.0001 ? '< 0.0001' : `= ${formatPValue(ols.pValue)}`}
+              p {animPValue < 0.0001 ? '< 0.0001' : `= ${formatPValue(animPValue)}`}
             </span>
             <span className="text-xs font-mono font-semibold text-slate-700">t = {ols.tStatistic.toFixed(2)}</span>
           </div>
@@ -104,28 +158,36 @@ export const StatisticalPanel: React.FC<StatisticalPanelProps> = ({
 
         <div
           className={`bg-white border rounded-lg p-4 transition-colors ${
-            highlightMetric === 'mannkendall' ? 'border-blue-500 ring-1 ring-blue-500/30' : 'border-slate-200'
+            highlightMetric === 'mannkendall'
+              ? 'border-blue-600 ring-1 ring-blue-500/40 animate-spotlight-card'
+              : 'border-slate-200'
           }`}
         >
           <div className="text-xs font-semibold text-slate-700">Mann-Kendall & Sen’s Slope</div>
           <div className="mt-1.5 flex items-baseline gap-2">
             <span className="text-2xl font-mono font-bold tabular-nums text-slate-950">
-              τ = {sign(mannKendall.tau)}
-              {mannKendall.tau.toFixed(3)}
+              τ = {sign(animTau)}
+              {animTau.toFixed(3)}
             </span>
             <span className="text-xs font-mono font-semibold text-slate-700">
               p {mannKendall.pValue < 0.0001 ? '< 0.0001' : `= ${formatPValue(mannKendall.pValue)}`}
             </span>
           </div>
           <div className="mt-1.5 text-xs font-mono font-medium tabular-nums text-slate-700">
-            Sen: {sign(mannKendall.sensSlopePerDecade)}
-            {mannKendall.sensSlopePerDecade.toFixed(variable.decimals)} {variable.unit}/dec
+            Sen: {sign(animSensSlope)}
+            {animSensSlope.toFixed(variable.decimals)} {variable.unit}/dec
           </div>
         </div>
       </div>
 
       {/* Scientific Significance Verdict */}
-      <div className={`border rounded-lg p-4 ${verdictTone}`}>
+      <motion.div
+        key={`${primarySummary.verdictTitle}-${primaryLabel}`}
+        initial={{ opacity: 0.7, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.28, ease: 'easeOut' }}
+        className={`border rounded-lg p-4 ${verdictTone}`}
+      >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-start gap-3">
             <DirectionIcon className="w-5 h-5 mt-0.5 shrink-0" />
@@ -144,7 +206,7 @@ export const StatisticalPanel: React.FC<StatisticalPanelProps> = ({
             <div className="font-medium mt-0.5">{primarySourceLabel}</div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Side-by-Side Comparison Summary when Region B is active */}
       {compareSummary && compareLabel && (
