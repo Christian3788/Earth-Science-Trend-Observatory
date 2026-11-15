@@ -20,6 +20,7 @@ interface ApiEarthResponse {
   sourceType: 'nasa-power-live' | 'mission-reference' | 'climatology-fallback';
   sourceLabel: string;
   points: TimeSeriesPoint[];
+  offlineDemo?: boolean;
   error?: string;
 }
 
@@ -210,7 +211,10 @@ export default function App() {
                 <TrendDashboard
                   primarySummary={primarySummary}
                   primaryLabel={primaryLabel}
-                  primarySourceLabel={primaryData?.sourceLabel || selectedVariable.mission}
+                  primarySourceLabel={
+                  (primaryData?.sourceLabel || selectedVariable.mission) +
+                  (primaryData?.offlineDemo ? ' · Offline demo (recorded live data)' : '')
+                }
                   variable={selectedVariable}
                   loading={loadingPrimary}
                   fetchError={fetchError}

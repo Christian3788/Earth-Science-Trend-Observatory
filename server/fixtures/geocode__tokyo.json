@@ -1,0 +1,53 @@
+{
+ "results": [
+  {
+   "id": "om-1850147",
+   "name": "Tokyo",
+   "subtitle": "Tokyo, Japan",
+   "lat": 35.69,
+   "lon": 139.69,
+   "kind": "city"
+  },
+  {
+   "id": "om-2085290",
+   "name": "Tokyo",
+   "subtitle": "Central Province, Papua New Guinea",
+   "lat": -8.4,
+   "lon": 147.15,
+   "kind": "city"
+  },
+  {
+   "id": "om-7945384",
+   "name": "Tokyo",
+   "subtitle": "Karnali Pradesh, Nepal",
+   "lat": 29.17,
+   "lon": 83.16,
+   "kind": "city"
+  },
+  {
+   "id": "om-1850142",
+   "name": "Tōkyō Zan",
+   "subtitle": "Niigata, Japan",
+   "lat": 37.94,
+   "lon": 138.48,
+   "kind": "city"
+  },
+  {
+   "id": "om-4737031",
+   "name": "Tokyo Hill",
+   "subtitle": "Texas, United States",
+   "lat": 26.92,
+   "lon": -97.86,
+   "kind": "city"
+  },
+  {
+   "id": "om-1834300",
+   "name": "Tonggŏch’ado-ri",
+   "subtitle": "Jeollanam-do, South Korea",
+   "lat": 34.24,
+   "lon": 125.94,
+   "kind": "city"
+  }
+ ],
+ "recordedAt": "2026-11-15T11:18:06.652Z"
+}
