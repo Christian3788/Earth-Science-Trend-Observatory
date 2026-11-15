@@ -58,7 +58,7 @@ Pre-demo: run `bash scripts/smoke.sh` once — all 7 checks green means every en
 
 1. **Upstream slow:** wait — the 30-min/12-h caches mean only the first request pays the cost. Run the smoke test during setup to warm them.
 2. **One endpoint down:** pivot cases — 6 guided cases span live POWER variables (T2M, TS, PRECTOTCORR, GWETPROF) and reference ones; at least one path always works.
-3. **No internet at all:** the app still loads; reference profiles and procedural textures render. Talk the stats story (deseasonalize → OLS → Mann–Kendall) on whatever is cached and show the methodology section. Be honest that live fetch needs connectivity.
+3. **No internet at all:** stick to the recorded path — Utqiaġvik or Nairobi with any of the 6 tracking buttons, search for Nairobi/Tokyo. The server serves recorded live data badged "Offline demo (recorded live data)". Anything else falls back to labeled reference series; be honest about the badge if asked.
 4. **App crash:** refresh — state is simple to rebuild in ~20 seconds via a guided case (pick a case, toggle deseasonalize).
 
 ## Setup checklist (day before)

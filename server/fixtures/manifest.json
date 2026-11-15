@@ -1,0 +1,120 @@
+{
+ "recordedAt": "2026-11-15T11:18:06.652Z",
+ "baseUrl": "http://localhost:3000",
+ "entries": [
+  {
+   "file": "geocode__nairobi.json",
+   "endpoint": "/api/geocode",
+   "q": "nairobi",
+   "results": 5
+  },
+  {
+   "file": "geocode__tokyo.json",
+   "endpoint": "/api/geocode",
+   "q": "tokyo",
+   "results": 6
+  },
+  {
+   "file": "geocode__utqiagvik.json",
+   "endpoint": "/api/geocode",
+   "q": "utqiagvik",
+   "results": 1
+  },
+  {
+   "file": "earth-data__TS__71.29_-156.79__1985-2024__monthly.json",
+   "endpoint": "/api/earth-data",
+   "variable": "TS",
+   "name": "default-utqiagvik",
+   "lat": 71.29,
+   "lon": -156.79
+  },
+  {
+   "file": "earth-data__PRECTOTCORR__71.29_-156.79__1985-2024__monthly.json",
+   "endpoint": "/api/earth-data",
+   "variable": "PRECTOTCORR",
+   "name": "default-utqiagvik",
+   "lat": 71.29,
+   "lon": -156.79
+  },
+  {
+   "file": "earth-data__SRF_ALB__71.29_-156.79__1985-2024__monthly.json",
+   "endpoint": "/api/earth-data",
+   "variable": "SRF_ALB",
+   "name": "default-utqiagvik",
+   "lat": 71.29,
+   "lon": -156.79
+  },
+  {
+   "file": "earth-data__GWETPROF__71.29_-156.79__1985-2024__monthly.json",
+   "endpoint": "/api/earth-data",
+   "variable": "GWETPROF",
+   "name": "default-utqiagvik",
+   "lat": 71.29,
+   "lon": -156.79
+  },
+  {
+   "file": "earth-data__WS10M__71.29_-156.79__1985-2024__monthly.json",
+   "endpoint": "/api/earth-data",
+   "variable": "WS10M",
+   "name": "default-utqiagvik",
+   "lat": 71.29,
+   "lon": -156.79
+  },
+  {
+   "file": "earth-data__ALLSKY_SFC_SW_DWN__71.29_-156.79__1985-2024__monthly.json",
+   "endpoint": "/api/earth-data",
+   "variable": "ALLSKY_SFC_SW_DWN",
+   "name": "default-utqiagvik",
+   "lat": 71.29,
+   "lon": -156.79
+  },
+  {
+   "file": "earth-data__TS__-1.28_36.82__1985-2024__monthly.json",
+   "endpoint": "/api/earth-data",
+   "variable": "TS",
+   "name": "nairobi",
+   "lat": -1.28,
+   "lon": 36.82
+  },
+  {
+   "file": "earth-data__PRECTOTCORR__-1.28_36.82__1985-2024__monthly.json",
+   "endpoint": "/api/earth-data",
+   "variable": "PRECTOTCORR",
+   "name": "nairobi",
+   "lat": -1.28,
+   "lon": 36.82
+  },
+  {
+   "file": "earth-data__SRF_ALB__-1.28_36.82__1985-2024__monthly.json",
+   "endpoint": "/api/earth-data",
+   "variable": "SRF_ALB",
+   "name": "nairobi",
+   "lat": -1.28,
+   "lon": 36.82
+  },
+  {
+   "file": "earth-data__GWETPROF__-1.28_36.82__1985-2024__monthly.json",
+   "endpoint": "/api/earth-data",
+   "variable": "GWETPROF",
+   "name": "nairobi",
+   "lat": -1.28,
+   "lon": 36.82
+  },
+  {
+   "file": "earth-data__WS10M__-1.28_36.82__1985-2024__monthly.json",
+   "endpoint": "/api/earth-data",
+   "variable": "WS10M",
+   "name": "nairobi",
+   "lat": -1.28,
+   "lon": 36.82
+  },
+  {
+   "file": "earth-data__ALLSKY_SFC_SW_DWN__-1.28_36.82__1985-2024__monthly.json",
+   "endpoint": "/api/earth-data",
+   "variable": "ALLSKY_SFC_SW_DWN",
+   "name": "nairobi",
+   "lat": -1.28,
+   "lon": 36.82
+  }
+ ]
+}

@@ -1,0 +1,45 @@
+{
+ "results": [
+  {
+   "id": "om-184745",
+   "name": "Nairobi",
+   "subtitle": "Nairobi County, Kenya",
+   "lat": -1.28,
+   "lon": 36.82,
+   "kind": "city"
+  },
+  {
+   "id": "om-152020",
+   "name": "Nairobi",
+   "subtitle": "Tanga, Tanzania",
+   "lat": -4.95,
+   "lon": 38.93,
+   "kind": "city"
+  },
+  {
+   "id": "om-8435465",
+   "name": "Nairobi",
+   "subtitle": "North Kivu, Democratic Republic of Congo",
+   "lat": -1.46,
+   "lon": 28.1,
+   "kind": "city"
+  },
+  {
+   "id": "om-8477788",
+   "name": "Nairobi Dam",
+   "subtitle": "Nairobi County, Kenya",
+   "lat": -1.32,
+   "lon": 36.8,
+   "kind": "city"
+  },
+  {
+   "id": "om-184735",
+   "name": "Nairobi West",
+   "subtitle": "Nairobi County, Kenya",
+   "lat": -1.31,
+   "lon": 36.82,
+   "kind": "city"
+  }
+ ],
+ "recordedAt": "2026-11-15T11:18:06.652Z"
+}

@@ -72,9 +72,11 @@ npm run build    # must emit dist/index.html + dist/assets/
 
 ## How it behaves without upstream
 
-- Supported POWER variables degrade to a **labeled climatology fallback** (the UI shows the source label) instead of erroring.
+- Pre-recorded demo queries (Utqiaġvik + Nairobi × all 6 tracked variables, plus geocode for Nairobi/Tokyo/Utqiaġvik) are served from `server/fixtures/` as **recorded live data** — the UI badges them "Offline demo (recorded live data)".
+- Anything not pre-recorded degrades to a **labeled climatology fallback** (the UI shows the source label) instead of erroring.
 - JSON cached 30 min in memory; satellite images 12 h — brief outages mid-demo are invisible.
 - Imagery start years clamp to each sensor's launch year (e.g., AMSR2 sea ice from 2013); daily POWER requests are limited to a recent 5-year window.
+- Re-record fixtures against a live server with: `BASE_URL=http://localhost:3000 node scripts/record-fixtures.mjs` (refuses to overwrite unless the live response validates as real data).
 
 ## Troubleshooting
 

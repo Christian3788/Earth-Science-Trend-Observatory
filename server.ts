@@ -11,6 +11,7 @@ import {
   validateCoordinates,
 } from './src/utils/dataPipeline.ts';
 import insightsRouter from './src/insights/insightsRouter.ts';
+import { findEarthDataFixture, findGeocodeFixture } from './server/fixtures.ts';
 
 dotenv.config();
 
@@ -359,6 +360,33 @@ app.get('/api/earth-data', async (req, res) => {
       }
     }
 
+    // Offline demo fallback: serve recorded *live* data when the upstream
+    // failed and this exact query was pre-recorded.
+    const fixture = findEarthDataFixture({
+      variable,
+      lat: roundedLat,
+      lon: roundedLon,
+      startYear,
+      endYear,
+      resolution,
+    });
+    if (fixture) {
+      const payload = {
+        variable,
+        lat: roundedLat,
+        lon: roundedLon,
+        resolution: fixture.resolution,
+        sourceType: fixture.sourceType,
+        sourceLabel: fixture.sourceLabel,
+        points: fixture.points,
+        coverage: fixture.coverage ?? summarizeCoverage(fixture.points),
+        offlineDemo: true,
+      };
+      responseCache.set(cacheKey, { timestamp: Date.now(), payload });
+      res.json(payload);
+      return;
+    }
+
     const generated = generateCalibratedMissionSeries(variable, roundedLat, roundedLon, startYear, endYear);
     const payload = {
       variable,
@@ -662,6 +690,7 @@ app.get('/api/geocode', async (req, res) => {
     ).slice(0, 4);
 
     let cityMatches: GeocodeResult[] = [];
+    let upstreamFailed = false;
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 3500);
@@ -700,6 +729,14 @@ app.get('/api/geocode', async (req, res) => {
       }
     } catch (err) {
       console.warn('Open-Meteo geocode fallback to feature catalog:', err);
+      upstreamFailed = true;
+    }
+
+    // Offline demo fallback: recorded city results when the upstream failed.
+    // (A genuine empty result while online is left empty, never backfilled.)
+    if (upstreamFailed) {
+      const fixture = findGeocodeFixture(q);
+      if (fixture) cityMatches = fixture.results;
     }
 
     // Combine geographic features + live geocoded cities/places, avoiding near-identical names
