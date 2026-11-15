@@ -2,6 +2,15 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import {
+  cleanTimeSeries,
+  fetchWithRetry,
+  parseNasaPowerDaily,
+  parseNasaPowerMonthly,
+  summarizeCoverage,
+  validateCoordinates,
+} from './src/utils/dataPipeline.ts';
+import insightsRouter from './src/insights/insightsRouter.ts';
 
 dotenv.config();
 
@@ -259,6 +268,8 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'TerraTrend Observatory API' });
 });
 
+app.use('/api/insights', insightsRouter);
+
 app.get('/api/earth-data', async (req, res) => {
   try {
     const lat = Number(req.query.lat);
@@ -268,8 +279,9 @@ app.get('/api/earth-data', async (req, res) => {
     const endYear = Math.max(startYear + 1, Math.min(2025, Number(req.query.endYear) || 2024));
     const resolution = req.query.resolution === 'daily' ? 'daily' : 'monthly';
 
-    if (Number.isNaN(lat) || Number.isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-      res.status(400).json({ error: 'Coordinates out of valid Earth bounds (-90..90, -180..180).' });
+    const coordError = validateCoordinates(lat, lon);
+    if (coordError) {
+      res.status(400).json({ error: coordError });
       return;
     }
 
@@ -288,9 +300,6 @@ app.get('/api/earth-data', async (req, res) => {
       const effectiveMonthlyStart = Math.max(nasaCfg.minYear, startYear);
       if (endYear > effectiveMonthlyStart) {
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 12000);
-
           let url = '';
           if (resolution === 'daily') {
             // For daily resolution, NASA POWER supports multi-year spans cleanly; cap daily span to max 5 years so payloads stay responsive
@@ -304,12 +313,8 @@ app.get('/api/earth-data', async (req, res) => {
             )}&community=RE&longitude=${roundedLon}&latitude=${roundedLat}&start=${effectiveMonthlyStart}&end=${endYear}&format=JSON`;
           }
 
-          const upstream = await fetch(url, { signal: controller.signal });
-          clearTimeout(timeoutId);
-
-          if (!upstream.ok) {
-            throw new Error(`NASA POWER HTTP ${upstream.status}`);
-          }
+          // Hardened ingestion: per-attempt timeout + retry on 5xx/429/network errors.
+          const upstream = await fetchWithRetry(url, { timeoutMs: 12000, retries: 2, backoffMs: 800 });
 
           const json = (await upstream.json()) as {
             properties?: { parameter?: Record<string, Record<string, number>> };
@@ -321,45 +326,13 @@ app.get('/api/earth-data', async (req, res) => {
             throw new Error('NASA POWER response missing parameter data');
           }
 
-        const points: TimeSeriesPoint[] = [];
-
-        if (resolution === 'daily') {
-          for (const [key, val] of Object.entries(rawParam)) {
-            if (val === -999 || val === null || Number.isNaN(val)) continue;
-            if (key.length !== 8) continue;
-            const y = Number(key.slice(0, 4));
-            const m = Number(key.slice(4, 6));
-            const d = Number(key.slice(6, 8));
-            if (m < 1 || m > 12 || d < 1 || d > 31) continue;
-            const dayOfYear = (m - 1) * 30.4375 + d;
-            points.push({
-              date: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
-              year: y,
-              month: m,
-              day: d,
-              decimalYear: Number((y + (dayOfYear - 0.5) / 365.25).toFixed(5)),
-              value: Number(val.toFixed(4)),
-            });
-          }
-        } else {
-          for (const [key, val] of Object.entries(rawParam)) {
-            if (val === -999 || val === null || Number.isNaN(val)) continue;
-            if (key.length !== 6) continue;
-            const y = Number(key.slice(0, 4));
-            const m = Number(key.slice(4, 6));
-            // NASA POWER monthly responses include month 13 as the annual mean; skip month 13
-            if (m < 1 || m > 12) continue;
-            points.push({
-              date: `${y}-${String(m).padStart(2, '0')}`,
-              year: y,
-              month: m,
-              decimalYear: Number((y + (m - 0.5) / 12).toFixed(4)),
-              value: Number(val.toFixed(4)),
-            });
-          }
-        }
-
-        points.sort((a, b) => a.decimalYear - b.decimalYear);
+        // Shared, unit-tested parsing + deterministic cleaning (dedupe/sort/drop).
+        const parsed =
+          resolution === 'daily'
+            ? parseNasaPowerDaily(rawParam as Record<string, unknown>)
+            : parseNasaPowerMonthly(rawParam as Record<string, unknown>);
+        const cleaned = cleanTimeSeries(parsed.points);
+        const points: TimeSeriesPoint[] = cleaned.points;
 
           if (points.length >= 6) {
             const payload = {
@@ -370,6 +343,11 @@ app.get('/api/earth-data', async (req, res) => {
               sourceType: 'nasa-power-live',
               sourceLabel: 'NASA POWER Live API (MERRA-2 / CERES / GPM)',
               points,
+              coverage: summarizeCoverage(points, {
+                droppedSentinel: parsed.stats.droppedSentinel,
+                droppedInvalid: parsed.stats.droppedInvalid + cleaned.droppedInvalid,
+                duplicatesRemoved: cleaned.duplicatesRemoved,
+              }),
             };
             responseCache.set(cacheKey, { timestamp: Date.now(), payload });
             res.json(payload);
@@ -390,6 +368,7 @@ app.get('/api/earth-data', async (req, res) => {
       sourceType: generated.sourceType,
       sourceLabel: generated.sourceLabel,
       points: generated.points,
+      coverage: summarizeCoverage(generated.points),
     };
     responseCache.set(cacheKey, { timestamp: Date.now(), payload });
     res.json(payload);

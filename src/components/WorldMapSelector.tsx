@@ -45,6 +45,7 @@ interface WorldMapSelectorProps {
   unit: string;
   decimals: number;
   onChangeEndYear?: (yr: number) => void;
+  hideOverlays?: boolean;
 }
 
 const SVG_W = 960;
@@ -166,6 +167,7 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
   unit,
   decimals,
   onChangeEndYear,
+  hideOverlays = false,
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -309,6 +311,8 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
             <span>Blue Marble Basemap</span>
           </button>
 
+          {!hideOverlays && (
+          <>
           <div className="flex items-center gap-0.5 p-0.5 bg-slate-200/80 rounded-md">
             <button
               type="button"
@@ -367,6 +371,8 @@ export const WorldMapSelector: React.FC<WorldMapSelectorProps> = ({
                 className="w-16 accent-blue-600 cursor-pointer"
               />
             </div>
+          )}
+          </>
           )}
 
           {onChangeEndYear && (
